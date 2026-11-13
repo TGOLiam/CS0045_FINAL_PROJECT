@@ -83,7 +83,7 @@ int Application::run(int argc, char** argv)
 
 void Application::update(float deltaTime)
 {
-    (void)deltaTime;
+    helicopter_.update(deltaTime);
     if (input_.isKeyPressed(27)) quitRequested_ = true;
     int deltaX = 0;
     int deltaY = 0;
@@ -94,7 +94,6 @@ void Application::update(float deltaTime)
 
 void Application::render()
 {
-    // Temporary preview position; use the helicopter's position when movement is added.
     const Vec3 helicopterPosition = {0.0f, 1.5f, 0.0f};
     camera_.setTarget(helicopterPosition);
     renderer_.beginFrame(width_, height_, {0.08f, 0.1f, 0.14f, 1.0f});

@@ -1,4 +1,15 @@
 #include "Helicopter.h"
+#include <cmath>
+
+void Helicopter::update(float deltaTime)
+{
+    // Fixed rotor speeds: RPM converted to degrees per second.
+    constexpr float mainRotorRpm = 180.0f;
+    constexpr float tailRotorRpm = 360.0f;
+    mainRotorDegrees_ = std::fmod(mainRotorDegrees_ + mainRotorRpm * 6.0f * deltaTime, 360.0f);
+    tailRotorDegrees_ = std::fmod(tailRotorDegrees_ + tailRotorRpm * 6.0f * deltaTime, 360.0f);
+
+}
 
 void Helicopter::draw(const Renderer& renderer, const Matrix4& worldTransform) const
 {
@@ -46,6 +57,7 @@ void Helicopter::draw(const Renderer& renderer, const Matrix4& worldTransform) c
     renderer.draw(
         MeshId::Cube,
         worldTransform * Matrix4::translation(0.0f, 0.65f, 0.0f)
+                       * Matrix4::rotation(mainRotorDegrees_, {0.0f, 1.0f, 0.0f})
                        * Matrix4::scale(2.8f, 0.06f, 0.16f),
         {0.12f, 0.12f, 0.12f}
     );
@@ -53,7 +65,7 @@ void Helicopter::draw(const Renderer& renderer, const Matrix4& worldTransform) c
     renderer.draw(
         MeshId::Cube,
         worldTransform * Matrix4::translation(0.0f, 0.65f, 0.0f)
-                       * Matrix4::rotation(90.0f, {0.0f, 1.0f, 0.0f})
+                       * Matrix4::rotation(mainRotorDegrees_ + 90.0f, {0.0f, 1.0f, 0.0f})
                        * Matrix4::scale(2.8f, 0.06f, 0.16f),
         {0.12f, 0.12f, 0.12f}
     );
@@ -62,6 +74,7 @@ void Helicopter::draw(const Renderer& renderer, const Matrix4& worldTransform) c
     renderer.draw(
         MeshId::Cube,
         worldTransform * Matrix4::translation(-1.95f, 0.25f, 0.12f)
+                       * Matrix4::rotation(tailRotorDegrees_, {0.0f, 0.0f, 1.0f})
                        * Matrix4::scale(0.08f, 0.55f, 0.1f),
         {0.15f, 0.15f, 0.15f}
     );
@@ -69,7 +82,7 @@ void Helicopter::draw(const Renderer& renderer, const Matrix4& worldTransform) c
     renderer.draw(
         MeshId::Cube,
         worldTransform * Matrix4::translation(-1.95f, 0.25f, 0.12f)
-                       * Matrix4::rotation(90.0f, {0.0f, 0.0f, 1.0f})
+                       * Matrix4::rotation(tailRotorDegrees_ + 90.0f, {0.0f, 0.0f, 1.0f})
                        * Matrix4::scale(0.08f, 0.55f, 0.1f),
         {0.15f, 0.15f, 0.15f}
     );
