@@ -14,5 +14,5 @@ make
 ./build/helicopter-simulator
 ```
 
-The current entry point exits immediately; window creation comes next. Run
+The current application opens a full-screen window; press Escape to exit. Run
 `make clean` to remove generated build files.
