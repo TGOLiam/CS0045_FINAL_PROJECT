@@ -49,8 +49,31 @@ int Application::run(int argc, char** argv)
             static_cast<Application*>(glutGetWindowData())->quitRequested_ = true;
         }
     });
+    // Temporary Stage 1 camera controls; route Input events here once integrated.
+    glutMouseFunc([](int button, int state, int x, int y) {
+        auto* app = static_cast<Application*>(glutGetWindowData());
+        if (button == GLUT_RIGHT_BUTTON) {
+            app->cameraDragging_ = (state == GLUT_DOWN);
+            app->lastMouseX_ = x;
+            app->lastMouseY_ = y;
+        }
+    });
+    glutMotionFunc([](int x, int y) {
+        auto* app = static_cast<Application*>(glutGetWindowData());
+        if (!app->cameraDragging_) return;
+        const int deltaX = x - app->lastMouseX_;
+        const int deltaY = y - app->lastMouseY_;
+        app->lastMouseX_ = x;
+        app->lastMouseY_ = y;
+        app->camera_.orbit(-deltaX * 0.25f, deltaY * 0.25f);
+    });
+    glutMouseWheelFunc([](int, int direction, int, int) {
+        auto* app = static_cast<Application*>(glutGetWindowData());
+        app->camera_.zoom(-static_cast<float>(direction));
+    });
     glutCloseFunc([]() {
         auto* app = static_cast<Application*>(glutGetWindowData());
+        if (!app) return;
         // Release renderer meshes before FreeGLUT destroys the context.
         app->renderer_.shutdown();
         app->windowId_ = 0;
@@ -75,6 +98,9 @@ int Application::run(int argc, char** argv)
     if (windowId_ != 0) {
         // Release renderer meshes before destroying the window.
         renderer_.shutdown();
+        // Explicit destruction can invoke the close callback after window data
+        // is unavailable; cleanup has already happened on this path.
+        glutCloseFunc(nullptr);
         glutDestroyWindow(windowId_);
         windowId_ = 0;
     }
