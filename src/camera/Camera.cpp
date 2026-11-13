@@ -41,6 +41,9 @@ Matrix4 Camera::viewMatrix() const
 
 Matrix4 Camera::projectionMatrix(int width, int height) const
 {
-    // Temporary cube projection; the full camera will own its projection settings.
-    return Matrix4::perspective(60.0f, static_cast<float>(width) / height, 0.1f, 100.0f);
+    // Keep a valid aspect ratio if a window reports zero dimensions while minimized.
+    const int safeWidth = std::max(width, 1);
+    const int safeHeight = std::max(height, 1);
+    return Matrix4::perspective(60.0f, static_cast<float>(safeWidth) / safeHeight,
+                                0.1f, 100.0f);
 }

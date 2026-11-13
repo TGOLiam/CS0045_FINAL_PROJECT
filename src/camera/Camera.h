@@ -3,6 +3,7 @@
 
 class Camera {
 public:
+    // Updating the target preserves the current orbit and distance.
     void setTarget(Vec3 target);
     void orbit(float yawDeltaDegrees, float pitchDeltaDegrees);
     void zoom(float distanceDelta);
