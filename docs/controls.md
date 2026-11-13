@@ -1,8 +1,8 @@
 # Controls
 
 During the temporary Stage 1 cube scene, hold the right mouse button and drag
-to orbit the camera, scroll to zoom, and press Escape to exit. These callbacks
-will be replaced when the Input subsystem is integrated.
+to orbit the camera, scroll to zoom, and press Escape to exit. Application routes
+these inputs to the camera during the temporary cube scene.
 
 | State | Input | Action |
 | --- | --- | --- |

@@ -14,6 +14,9 @@ private:
 
     int lastMouseX;
     int lastMouseY;
+    int dragX;
+    int dragY;
+    int wheelDelta;
 
     static void keyboardDown(unsigned char key, int x, int y);
     static void keyboardUp(unsigned char key, int x, int y);
@@ -26,7 +29,10 @@ public:
     Input();
 
     void initialize();
+    void shutdown();
 
     bool isKeyPressed(unsigned char key) const;
     bool isRightMouseDown() const;
+    void consumeMouseDelta(int& x, int& y);
+    int consumeWheelDelta();
 };

@@ -43,34 +43,7 @@ int Application::run(int argc, char** argv)
         app->width_ = std::max(width, 1);
         app->height_ = std::max(height, 1);
     });
-    // Temporary exit binding until Input is integrated.
-    glutKeyboardFunc([](unsigned char key, int, int) {
-        if (key == 27) {
-            static_cast<Application*>(glutGetWindowData())->quitRequested_ = true;
-        }
-    });
-    // Temporary Stage 1 camera controls; route Input events here once integrated.
-    glutMouseFunc([](int button, int state, int x, int y) {
-        auto* app = static_cast<Application*>(glutGetWindowData());
-        if (button == GLUT_RIGHT_BUTTON) {
-            app->cameraDragging_ = (state == GLUT_DOWN);
-            app->lastMouseX_ = x;
-            app->lastMouseY_ = y;
-        }
-    });
-    glutMotionFunc([](int x, int y) {
-        auto* app = static_cast<Application*>(glutGetWindowData());
-        if (!app->cameraDragging_) return;
-        const int deltaX = x - app->lastMouseX_;
-        const int deltaY = y - app->lastMouseY_;
-        app->lastMouseX_ = x;
-        app->lastMouseY_ = y;
-        app->camera_.orbit(-deltaX * 0.25f, deltaY * 0.25f);
-    });
-    glutMouseWheelFunc([](int, int direction, int, int) {
-        auto* app = static_cast<Application*>(glutGetWindowData());
-        app->camera_.zoom(-static_cast<float>(direction));
-    });
+    input_.initialize();
     glutCloseFunc([]() {
         auto* app = static_cast<Application*>(glutGetWindowData());
         if (!app) return;
@@ -90,11 +63,12 @@ int Application::run(int argc, char** argv)
         const float deltaTime = std::min(
             std::chrono::duration<float>(now - previous).count(), 0.1f);
         previous = now;
-        // Input events will be routed here when the Input subsystem is ready.
         update(deltaTime);
+        if (quitRequested_) break;
         render();
         glutSwapBuffers();
     }
+    input_.shutdown();
     if (windowId_ != 0) {
         // Release renderer meshes before destroying the window.
         renderer_.shutdown();
@@ -110,6 +84,12 @@ int Application::run(int argc, char** argv)
 void Application::update(float deltaTime)
 {
     (void)deltaTime;
+    if (input_.isKeyPressed(27)) quitRequested_ = true;
+    int deltaX = 0;
+    int deltaY = 0;
+    input_.consumeMouseDelta(deltaX, deltaY);
+    camera_.orbit(-deltaX * 0.25f, deltaY * 0.25f);
+    camera_.zoom(-static_cast<float>(input_.consumeWheelDelta()));
 }
 
 void Application::render()
