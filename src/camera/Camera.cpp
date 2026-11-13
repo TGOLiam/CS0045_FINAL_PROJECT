@@ -1,6 +1,7 @@
 #include "Camera.h"
 
 #include <cmath>
+#include <algorithm>
 
 namespace {
 constexpr float pi = 3.14159265358979323846f;
@@ -9,6 +10,19 @@ constexpr float pi = 3.14159265358979323846f;
 void Camera::setTarget(Vec3 target)
 {
     target_ = target;
+}
+
+void Camera::orbit(float yawDeltaDegrees, float pitchDeltaDegrees)
+{
+    // Keep yaw bounded and pitch away from the poles, where the up vector fails.
+    yawDegrees_ = std::remainder(yawDegrees_ + yawDeltaDegrees, 360.0f);
+    pitchDegrees_ = std::clamp(pitchDegrees_ + pitchDeltaDegrees, minPitch_, maxPitch_);
+}
+
+void Camera::zoom(float distanceDelta)
+{
+    // Zoom changes the eye-to-target distance, not the perspective field of view.
+    distance_ = std::clamp(distance_ + distanceDelta, minDistance_, maxDistance_);
 }
 
 Matrix4 Camera::viewMatrix() const
