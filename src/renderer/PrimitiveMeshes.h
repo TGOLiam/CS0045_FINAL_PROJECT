@@ -9,4 +9,5 @@ std::vector<float> cube();
 std::vector<float> line();
 std::vector<float> point();
 std::vector<float> quad();
+std::vector<float> disc();
 }

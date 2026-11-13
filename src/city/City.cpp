@@ -26,7 +26,21 @@ void drawRoadLine(Renderer& renderer, float x, float z, float length,
     renderer.draw(MeshId::Line, model, color);
 }
 
+void drawBox(Renderer& renderer, float x, float y, float z,
+             float width, float height, float depth, Color color)
+{
+    const Matrix4 model = Matrix4::translation(x, y, z)
+                        * Matrix4::scale(width, height, depth);
+    renderer.draw(MeshId::Cube, model, color);
+}
 
+void drawDisc(Renderer& renderer, float y, float diameter, Color color)
+{
+    const Matrix4 model = Matrix4::translation(0.0f, y, 0.0f)
+                        * Matrix4::rotation(-90.0f, {1.0f, 0.0f, 0.0f})
+                        * Matrix4::scale(diameter, diameter, 1.0f);
+    renderer.draw(MeshId::Disc, model, color);
+}
 }
 
 void City::render(Renderer& renderer) const
@@ -100,4 +114,51 @@ void City::render(Renderer& renderer) const
         }
     }
 
+    // Starting tower: the shared cube is centered, so lift its center by
+    // half its height to place its base on the ground.
+    constexpr float towerHeight = 32.5f;
+    const Matrix4 tower = Matrix4::translation(0.0f, towerHeight / 2.0f, 0.0f)
+                        * Matrix4::scale(30.0f, towerHeight, 30.0f);
+    renderer.draw(MeshId::Cube, tower, {0.36f, 0.48f, 0.60f});
+
+    // Eight rows of fixed-size windows on all four facades, following the
+    // reference tower's 3.5-unit floor height and 3-unit window spacing.
+    const Color window = {0.66f, 0.86f, 0.94f};
+    for (int floor = 0; floor < 8; ++floor) {
+        const float y = 4.5f + floor * 3.5f + 0.6f + 1.1f;
+        for (int bay = 0; bay < 9; ++bay) {
+            const float along = (bay - 4) * 3.0f;
+            for (float side : {-1.0f, 1.0f}) {
+                drawBox(renderer, along, y, side * 15.02f, 2.0f, 2.2f, 0.02f, window);
+                drawBox(renderer, side * 15.02f, y, along, 0.02f, 2.2f, 2.0f, window);
+            }
+        }
+    }
+
+    // Dark lobby, service entrances, and a projecting entrance canopy.
+    const Color trim = {0.18f, 0.25f, 0.31f};
+    drawBox(renderer, 0.0f, 1.5f, 15.02f, 3.6f, 3.0f, 0.02f, trim);
+    drawBox(renderer, 0.0f, 3.45f, 15.6f, 5.6f, 0.3f, 1.2f, trim);
+    drawBox(renderer, -7.5f, 1.2f, -15.02f, 1.8f, 2.4f, 0.02f, trim);
+    drawBox(renderer, 15.02f, 1.2f, 0.0f, 0.02f, 2.4f, 1.6f, trim);
+    drawBox(renderer, -15.02f, 1.1f, -11.3f, 0.02f, 2.2f, 1.4f, trim);
+
+    // Four rooftop parapets and two boxes outside the landing disc.
+    for (float side : {-1.0f, 1.0f}) {
+        drawBox(renderer, 0.0f, towerHeight + 0.4f, side * 14.75f, 30.0f, 0.8f, 0.5f, trim);
+        drawBox(renderer, side * 14.75f, towerHeight + 0.4f, 0.0f, 0.5f, 0.8f, 29.0f, trim);
+    }
+    drawBox(renderer, -11.0f, towerHeight + 1.25f, -11.5f, 6.0f, 2.5f, 4.0f,
+            {0.54f, 0.58f, 0.63f});
+    drawBox(renderer, 12.5f, towerHeight + 1.5f, 12.5f, 2.4f, 3.0f, 2.4f,
+            {0.35f, 0.40f, 0.44f});
+
+    // Layered 24-sided discs create the dark pad and yellow ring without lighting.
+    drawDisc(renderer, towerHeight + 0.03f, 18.0f, {0.23f, 0.25f, 0.28f});
+    drawDisc(renderer, towerHeight + 0.05f, 16.5f, {0.91f, 0.77f, 0.28f});
+    drawDisc(renderer, towerHeight + 0.07f, 15.5f, {0.23f, 0.25f, 0.28f});
+    const Color helipadMark = {0.95f, 0.95f, 0.95f};
+    drawSurface(renderer, -2.0f, 0.0f, 1.0f, 6.0f, towerHeight + 0.09f, helipadMark);
+    drawSurface(renderer, 2.0f, 0.0f, 1.0f, 6.0f, towerHeight + 0.09f, helipadMark);
+    drawSurface(renderer, 0.0f, 0.0f, 3.0f, 1.0f, towerHeight + 0.09f, helipadMark);
 }

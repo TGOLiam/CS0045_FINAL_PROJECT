@@ -4,7 +4,7 @@
 #include "Color.h"
 #include "../math/Matrix4.h"
 
-enum class MeshId { Cube, Line, Point, Quad };
+enum class MeshId { Cube, Line, Point, Quad, Disc };
 
 class Renderer {
 public:
@@ -28,6 +28,7 @@ private:
     Mesh line_;
     Mesh point_;
     Mesh quad_;
+    Mesh disc_;
     Matrix4 view_ = Matrix4::identity();
     Matrix4 projection_ = Matrix4::identity();
     Matrix4 savedView_ = Matrix4::identity();

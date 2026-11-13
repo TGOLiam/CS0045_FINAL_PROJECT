@@ -8,7 +8,8 @@ bool Renderer::initialize()
     if (!cube_.upload(PrimitiveMeshes::cube(), GL_TRIANGLES) ||
         !line_.upload(PrimitiveMeshes::line(), GL_LINES) ||
         !point_.upload(PrimitiveMeshes::point(), GL_POINTS) ||
-        !quad_.upload(PrimitiveMeshes::quad(), GL_TRIANGLES)) {
+        !quad_.upload(PrimitiveMeshes::quad(), GL_TRIANGLES) ||
+        !disc_.upload(PrimitiveMeshes::disc(), GL_TRIANGLES)) {
         shutdown();
         return false;
     }
@@ -79,6 +80,7 @@ const Mesh& Renderer::meshFor(MeshId mesh) const
     case MeshId::Line: return line_;
     case MeshId::Point: return point_;
     case MeshId::Quad: return quad_;
+    case MeshId::Disc: return disc_;
     }
     throw std::invalid_argument("Unknown mesh");
 }
@@ -115,4 +117,5 @@ void Renderer::shutdown()
     line_.release();
     point_.release();
     quad_.release();
+    disc_.release();
 }
