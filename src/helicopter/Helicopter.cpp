@@ -58,18 +58,18 @@ void Helicopter::draw(const Renderer& renderer, const Matrix4& worldTransform) c
         {0.12f, 0.12f, 0.12f}
     );
 
-    // Tail rotor blades
+    // Tail rotor sits beside the fin; both blades rotate in the XY plane.
     renderer.draw(
         MeshId::Cube,
-        worldTransform * Matrix4::translation(-1.95f, 0.25f, 0.0f)
+        worldTransform * Matrix4::translation(-1.95f, 0.25f, 0.12f)
                        * Matrix4::scale(0.08f, 0.55f, 0.1f),
         {0.15f, 0.15f, 0.15f}
     );
 
     renderer.draw(
         MeshId::Cube,
-        worldTransform * Matrix4::translation(-1.95f, 0.25f, 0.0f)
-                       * Matrix4::rotation(90.0f, {1.0f, 0.0f, 0.0f})
+        worldTransform * Matrix4::translation(-1.95f, 0.25f, 0.12f)
+                       * Matrix4::rotation(90.0f, {0.0f, 0.0f, 1.0f})
                        * Matrix4::scale(0.08f, 0.55f, 0.1f),
         {0.15f, 0.15f, 0.15f}
     );

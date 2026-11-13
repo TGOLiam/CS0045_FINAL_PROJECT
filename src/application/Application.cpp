@@ -94,8 +94,13 @@ void Application::update(float deltaTime)
 
 void Application::render()
 {
+    // Temporary preview position; use the helicopter's position when movement is added.
+    const Vec3 helicopterPosition = {0.0f, 1.5f, 0.0f};
+    camera_.setTarget(helicopterPosition);
     renderer_.beginFrame(width_, height_, {0.08f, 0.1f, 0.14f, 1.0f});
     renderer_.begin3D(camera_.viewMatrix(), camera_.projectionMatrix(width_, height_));
     // Temporary Stage 2 model preview above the future ground plane.
-    helicopter_.draw(renderer_, Matrix4::translation(0.0f, 1.5f, 0.0f));
+    helicopter_.draw(renderer_, Matrix4::translation(helicopterPosition.x,
+                                                     helicopterPosition.y,
+                                                     helicopterPosition.z));
 }
