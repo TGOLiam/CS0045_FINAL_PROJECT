@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GL/glew.h>
+#include "Mesh.h"
 
 class Renderer {
 public:
@@ -9,6 +9,6 @@ public:
     void drawCube() const;
     void shutdown();
 private:
-    // Temporary VBO for the test cube.
-    GLuint cube_ = 0;
+    // Temporary mesh for the test cube.
+    Mesh cube_;
 };
