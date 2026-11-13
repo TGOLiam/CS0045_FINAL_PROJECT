@@ -27,6 +27,14 @@ int Application::run(int argc, char** argv)
         return 1;
     }
 
+    // Initialize the temporary cube renderer after creating the context.
+    if (!renderer_.initialize()) {
+        std::cerr << "Could not initialize renderer.\n";
+        glutDestroyWindow(windowId_);
+        windowId_ = 0;
+        return 1;
+    }
+
     glutSetWindowData(this);
     // FreeGLUT requires a display callback; the application loop draws frames.
     glutDisplayFunc([]() {});
@@ -43,6 +51,8 @@ int Application::run(int argc, char** argv)
     });
     glutCloseFunc([]() {
         auto* app = static_cast<Application*>(glutGetWindowData());
+        // Release the temporary cube before FreeGLUT destroys the context.
+        app->renderer_.shutdown();
         app->windowId_ = 0;
         app->quitRequested_ = true;
     });
@@ -63,6 +73,8 @@ int Application::run(int argc, char** argv)
         glutSwapBuffers();
     }
     if (windowId_ != 0) {
+        // Release the temporary cube before destroying the window.
+        renderer_.shutdown();
         glutDestroyWindow(windowId_);
         windowId_ = 0;
     }
@@ -79,4 +91,7 @@ void Application::render()
     glViewport(0, 0, width_, height_);
     glClearColor(0.08f, 0.1f, 0.14f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    camera_.apply(width_, height_);
+    // Temporary Stage 1 cube for checking the rendering and camera setup.
+    renderer_.drawCube();
 }
