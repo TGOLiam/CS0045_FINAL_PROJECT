@@ -109,6 +109,8 @@ void Renderer::drawRange(MeshId mesh, const Matrix4& model, Color color, GLint f
 
 void Renderer::shutdown()
 {
+    // Balance the matrix stacks if shutdown occurs during an interface pass.
+    if (interfaceActive_) endInterface();
     cube_.release();
     line_.release();
     point_.release();
