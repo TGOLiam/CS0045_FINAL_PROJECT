@@ -1,8 +1,8 @@
 # Controls
 
-During the temporary Stage 1 cube scene, hold the right mouse button and drag
-to orbit the camera, scroll to zoom, and press Escape to exit. Application routes
-these inputs to the camera during the temporary cube scene.
+In the current helicopter scene, use W/S and A/D to move, hold the right mouse
+button and drag to orbit, scroll to zoom, and press Escape to exit. Movement
+uses fixed world directions and the helicopter leans toward its travel direction.
 
 | State | Input | Action |
 | --- | --- | --- |

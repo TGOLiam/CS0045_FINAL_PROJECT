@@ -83,7 +83,11 @@ int Application::run(int argc, char** argv)
 
 void Application::update(float deltaTime)
 {
-    helicopter_.update(deltaTime);
+    // Route movement along fixed world axes; the model's nose faces +X.
+    const float forward = static_cast<float>(input_.isKeyPressed('w')) - static_cast<float>(input_.isKeyPressed('s'));
+    const float sideways = static_cast<float>(input_.isKeyPressed('d')) - static_cast<float>(input_.isKeyPressed('a'));
+    helicopter_.update(deltaTime, forward, sideways);
+    camera_.setTarget(helicopter_.position());
     if (input_.isKeyPressed(27)) quitRequested_ = true;
     int deltaX = 0;
     int deltaY = 0;
@@ -94,8 +98,7 @@ void Application::update(float deltaTime)
 
 void Application::render()
 {
-    const Vec3 helicopterPosition = {0.0f, 1.5f, 0.0f};
-    camera_.setTarget(helicopterPosition);
+    const Vec3 helicopterPosition = helicopter_.position();
     renderer_.beginFrame(width_, height_, {0.08f, 0.1f, 0.14f, 1.0f});
     renderer_.begin3D(camera_.viewMatrix(), camera_.projectionMatrix(width_, height_));
     // Temporary Stage 2 model preview above the future ground plane.
