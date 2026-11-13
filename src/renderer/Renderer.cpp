@@ -1,19 +1,17 @@
 #include "Renderer.h"
+#include "PrimitiveMeshes.h"
 #include <stdexcept>
 
 bool Renderer::initialize()
 {
-    // Temporary test geometry; move the cube definition to PrimitiveMeshes.
-    const std::vector<GLfloat> v = {
-        -1,-1,1, 1,-1,1, 1,1,1, -1,-1,1, 1,1,1, -1,1,1,
-        1,-1,-1, -1,-1,-1, -1,1,-1, 1,-1,-1, -1,1,-1, 1,1,-1,
-        -1,-1,-1, -1,-1,1, -1,1,1, -1,-1,-1, -1,1,1, -1,1,-1,
-        1,-1,1, 1,-1,-1, 1,1,-1, 1,-1,1, 1,1,-1, 1,1,1,
-        -1,1,1, 1,1,1, 1,1,-1, -1,1,1, 1,1,-1, -1,1,-1,
-        -1,-1,-1, 1,-1,-1, 1,-1,1, -1,-1,-1, 1,-1,1, -1,-1,1
-    };
-    // Temporary cube upload; initialize the reusable primitive collection here later.
-    if (!cube_.upload(v, GL_TRIANGLES)) return false;
+    // Upload static primitives once; release earlier uploads if any upload fails.
+    if (!cube_.upload(PrimitiveMeshes::cube(), GL_TRIANGLES) ||
+        !line_.upload(PrimitiveMeshes::line(), GL_LINES) ||
+        !point_.upload(PrimitiveMeshes::point(), GL_POINTS) ||
+        !quad_.upload(PrimitiveMeshes::quad(), GL_TRIANGLES)) {
+        shutdown();
+        return false;
+    }
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_LIGHTING);
     return true;
@@ -32,11 +30,55 @@ void Renderer::setViewProjection(const Matrix4& view, const Matrix4& projection)
     projection_ = projection;
 }
 
+void Renderer::begin3D(const Matrix4& view, const Matrix4& projection)
+{
+    if (interfaceActive_) throw std::logic_error("End interface pass before starting 3D");
+    glEnable(GL_DEPTH_TEST);
+    setViewProjection(view, projection);
+}
+
+void Renderer::beginInterface(int width, int height)
+{
+    if (interfaceActive_ || width <= 0 || height <= 0)
+        throw std::invalid_argument("Invalid interface pass");
+    savedView_ = view_;
+    savedProjection_ = projection_;
+    savedDepthTest_ = glIsEnabled(GL_DEPTH_TEST);
+    glGetIntegerv(GL_MATRIX_MODE, &savedMatrixMode_);
+    // Preserve the actual OpenGL matrices as well as Renderer's cached matrices.
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glDisable(GL_DEPTH_TEST);
+    setViewProjection(Matrix4::identity(),
+                      Matrix4::orthographic(0, static_cast<float>(width),
+                                            static_cast<float>(height), 0, -1, 1));
+    interfaceActive_ = true;
+}
+
+void Renderer::endInterface()
+{
+    if (!interfaceActive_) throw std::logic_error("No interface pass is active");
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(static_cast<GLenum>(savedMatrixMode_));
+    if (savedDepthTest_) glEnable(GL_DEPTH_TEST);
+    else glDisable(GL_DEPTH_TEST);
+    view_ = savedView_;
+    projection_ = savedProjection_;
+    interfaceActive_ = false;
+}
+
 const Mesh& Renderer::meshFor(MeshId mesh) const
 {
-    // Temporary lookup; extend it to return meshes from the primitive collection.
     switch (mesh) {
     case MeshId::Cube: return cube_;
+    case MeshId::Line: return line_;
+    case MeshId::Point: return point_;
+    case MeshId::Quad: return quad_;
     }
     throw std::invalid_argument("Unknown mesh");
 }
@@ -67,6 +109,8 @@ void Renderer::drawRange(MeshId mesh, const Matrix4& model, Color color, GLint f
 
 void Renderer::shutdown()
 {
-    // Release the temporary cube; later release all owned primitive meshes here.
     cube_.release();
+    line_.release();
+    point_.release();
+    quad_.release();
 }
