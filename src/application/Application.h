@@ -4,6 +4,7 @@
 #include "../renderer/Renderer.h"
 #include "../camera/Camera.h"
 #include "../input/Input.h"
+#include "../helicopter/Helicopter.h"
 
 class Application {
 public:
@@ -20,4 +21,5 @@ private:
     Input input_;
     Renderer renderer_;
     Camera camera_;
+    Helicopter helicopter_;
 };

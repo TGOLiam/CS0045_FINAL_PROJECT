@@ -96,15 +96,6 @@ void Application::render()
 {
     renderer_.beginFrame(width_, height_, {0.08f, 0.1f, 0.14f, 1.0f});
     renderer_.begin3D(camera_.viewMatrix(), camera_.projectionMatrix(width_, height_));
-    // Temporary Stage 1 scene: replace this cube and its face colors with scene draws.
-    const Color colors[] = {
-        {0.9f, 0.2f, 0.2f}, {0.2f, 0.7f, 0.9f},
-        {0.2f, 0.8f, 0.3f}, {0.9f, 0.7f, 0.2f},
-        {0.7f, 0.3f, 0.9f}, {0.9f, 0.5f, 0.2f}
-    };
-    // Preserve the test cube's previous size while using a reusable unit cube.
-    const Matrix4 model = Matrix4::scale(2.0f, 2.0f, 2.0f);
-    for (int face = 0; face < 6; ++face) {
-        renderer_.drawRange(MeshId::Cube, model, colors[face], face * 6, 6);
-    }
+    // Temporary Stage 2 model preview above the future ground plane.
+    helicopter_.draw(renderer_, Matrix4::translation(0.0f, 1.5f, 0.0f));
 }
