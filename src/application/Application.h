@@ -6,6 +6,7 @@
 #include "../input/Input.h"
 #include "../helicopter/Helicopter.h"
 #include "../city/City.h"
+#include "../customization/CustomizationSettings.h"
 
 class Application {
 public:
@@ -23,5 +24,6 @@ private:
     Renderer renderer_;
     Camera camera_;
     Helicopter helicopter_;
+    CustomizationSettings customization_;
     City city_;
 };

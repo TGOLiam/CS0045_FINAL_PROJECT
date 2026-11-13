@@ -102,7 +102,12 @@ void Application::render()
     renderer_.beginFrame(width_, height_, {0.08f, 0.1f, 0.14f, 1.0f});
     renderer_.begin3D(camera_.viewMatrix(), camera_.projectionMatrix(width_, height_));
     city_.render(renderer_);
-    helicopter_.draw(renderer_, Matrix4::translation(helicopterPosition.x,
-                                                     helicopterPosition.y,
-                                                     helicopterPosition.z));
+    const float helicopterScale = customization_.scale();
+    const Matrix4 helicopterTransform = Matrix4::translation(helicopterPosition.x,
+                                                               helicopterPosition.y,
+                                                               helicopterPosition.z)
+                                      * Matrix4::scale(helicopterScale,
+                                                       helicopterScale,
+                                                       helicopterScale);
+    helicopter_.draw(renderer_, helicopterTransform);
 }
