@@ -2,11 +2,54 @@
 
 #include "../renderer/Renderer.h"
 
+#include <algorithm>
+#include <cmath>
+#include <vector>
+
 namespace {
 constexpr float chunkSize = 360.0f;
 constexpr float cityHalfSize = 1.5f * chunkSize;
 constexpr float roadSpacing = 120.0f;
 constexpr float roadWidth = 8.0f;
+
+enum class BuildingStyle { Tower, Residential, Commercial };
+
+struct Building {
+    float x;
+    float z;
+    float width;
+    float depth;
+    float height;
+    Color color;
+    BuildingStyle style;
+};
+
+constexpr Color towerBlue = {93.0f/255.0f, 122.0f/255.0f, 153.0f/255.0f};
+constexpr Color towerGreen = {106.0f/255.0f, 143.0f/255.0f, 143.0f/255.0f};
+constexpr Color towerPurple = {125.0f/255.0f, 122.0f/255.0f, 160.0f/255.0f};
+constexpr Color residentialClay = {201.0f/255.0f, 142.0f/255.0f, 107.0f/255.0f};
+constexpr Color residentialSand = {212.0f/255.0f, 163.0f/255.0f, 115.0f/255.0f};
+constexpr Color residentialRose = {181.0f/255.0f, 119.0f/255.0f, 110.0f/255.0f};
+constexpr Color commercialYellow = {224.0f/255.0f, 201.0f/255.0f, 122.0f/255.0f};
+constexpr Color commercialGreen = {199.0f/255.0f, 211.0f/255.0f, 160.0f/255.0f};
+constexpr Color commercialPeach = {230.0f/255.0f, 160.0f/255.0f, 140.0f/255.0f};
+
+// Starting chunk footprints from the design reference. The center tower is
+// drawn separately, and the southeast block is reserved for the park.
+constexpr Building startingBuildings[] = {
+    {-144,-142,40,36,45.8f,residentialClay,BuildingStyle::Residential}, {-92,-146,36,28,14.7f,commercialYellow,BuildingStyle::Commercial},
+    {-120,-92,70,30,11.3f,commercialGreen,BuildingStyle::Commercial}, {-25,-142,34,34,81.5f,towerBlue,BuildingStyle::Tower},
+    {22,-144,40,36,39.4f,residentialSand,BuildingStyle::Residential}, {0,-90,80,24,11.3f,commercialPeach,BuildingStyle::Commercial},
+    {95,-140,36,44,29.8f,residentialRose,BuildingStyle::Residential}, {144,-144,30,30,99.0f,towerGreen,BuildingStyle::Tower},
+    {120,-88,60,22,7.9f,commercialYellow,BuildingStyle::Commercial}, {-142,0,36,70,11.3f,commercialPeach,BuildingStyle::Commercial},
+    {-96,-22,36,36,42.6f,residentialClay,BuildingStyle::Residential}, {-96,24,36,36,26.6f,residentialSand,BuildingStyle::Residential},
+    {-34,-36,24,20,7.9f,commercialGreen,BuildingStyle::Commercial}, {34,36,24,20,7.9f,commercialGreen,BuildingStyle::Commercial},
+    {94,-22,36,40,52.2f,residentialRose,BuildingStyle::Residential}, {144,-24,36,36,14.7f,commercialYellow,BuildingStyle::Commercial},
+    {120,30,46,28,71.0f,towerPurple,BuildingStyle::Tower}, {-144,98,32,32,88.5f,towerGreen,BuildingStyle::Tower},
+    {-94,94,34,28,11.3f,commercialPeach,BuildingStyle::Commercial}, {-120,148,70,32,23.4f,residentialClay,BuildingStyle::Residential},
+    {-26,94,36,30,14.7f,commercialGreen,BuildingStyle::Commercial}, {24,96,38,36,33.0f,residentialRose,BuildingStyle::Residential},
+    {0,148,76,30,23.4f,residentialClay,BuildingStyle::Residential}
+};
 
 void drawSurface(Renderer& renderer, float x, float z, float width, float depth,
                  float height, Color color)
@@ -32,6 +75,125 @@ void drawBox(Renderer& renderer, float x, float y, float z,
     const Matrix4 model = Matrix4::translation(x, y, z)
                         * Matrix4::scale(width, height, depth);
     renderer.draw(MeshId::Cube, model, color);
+}
+
+struct FacadeDetail {
+    Matrix4 model;
+    Color color;
+};
+
+std::vector<FacadeDetail> makeFacadeDetails()
+{
+    std::vector<FacadeDetail> details;
+    for (const Building& b : startingBuildings) {
+        const bool tower = b.style == BuildingStyle::Tower;
+        const bool residential = b.style == BuildingStyle::Residential;
+        const float groundHeight = residential ? 4.2f : 4.5f;
+        const float floorHeight = tower ? 3.5f : (residential ? 3.2f : 3.4f);
+        const float windowWidth = tower ? 2.0f : (residential ? 1.4f : 1.6f);
+        const float windowHeight = tower ? 2.2f : (residential ? 1.6f : 1.5f);
+        const float sill = tower ? 0.6f : 0.9f;
+        const Color window = tower ? Color{0.66f, 0.86f, 0.94f}
+                                   : Color{0.53f, 0.75f, 0.86f};
+        const Color trim = tower ? Color{0.18f, 0.25f, 0.31f}
+                                : (residential ? Color{0.54f, 0.42f, 0.33f}
+                                               : Color{0.43f, 0.42f, 0.39f});
+        for (int face = 0; face < 4; ++face) {
+            const bool xFace = face >= 2;
+            const float sign = (face % 2 == 0) ? 1.0f : -1.0f;
+            const float span = xFace ? b.depth : b.width;
+            const float pitch = tower ? 3.0f : (residential ? (xFace ? 6.0f : 4.0f) : 3.2f);
+            const int bays = static_cast<int>(std::floor((span - 2.4f) / pitch));
+            const int floors = static_cast<int>(std::round((b.height - groundHeight) / floorHeight));
+            // The shared quad is XY-facing +Z; rotate it for the X walls.
+            const Matrix4 wall = Matrix4::translation(
+                b.x + (xFace ? sign * (b.width / 2.0f + 0.02f) : 0.0f),
+                0.0f, b.z + (xFace ? 0.0f : sign * (b.depth / 2.0f + 0.02f)))
+                * Matrix4::rotation(xFace ? 90.0f : 0.0f, {0.0f, 1.0f, 0.0f});
+            auto add = [&](float u, float y, float width, float height, Color color) {
+                details.push_back({wall * Matrix4::translation(u, y, 0.0f)
+                                       * Matrix4::scale(width, height, 1.0f), color});
+            };
+            for (int floor = 0; floor < floors; ++floor) {
+                const float y = groundHeight + floor * floorHeight + sill + windowHeight / 2.0f;
+                if (y + windowHeight / 2.0f > b.height) continue;
+                for (int bay = 0; bay < bays; ++bay) {
+                    const float u = (bay - (bays - 1) / 2.0f) * pitch;
+                    // Residential service side has a central stairwell strip.
+                    if (residential && face == 3 && std::abs(u) < 1.2f) continue;
+                    add(u, y, windowWidth, windowHeight, window);
+                    if (residential && face == 0)
+                        add(u, groundHeight + floor * floorHeight + 0.675f,
+                            windowWidth + 0.8f, 0.25f, trim);
+                }
+            }
+            const Color door = {0.14f, 0.15f, 0.18f};
+            if (tower) {
+                const float doorWidth = face == 0 ? 3.6f : (face == 1 ? 1.8f : (face == 2 ? 1.6f : 1.4f));
+                add(0.0f, face == 0 ? 1.5f : 1.2f, doorWidth, face == 0 ? 3.0f : 2.4f, door);
+                if (face == 0) add(0.0f, 3.45f, 5.6f, 0.3f, trim);
+                if (face == 1) add(span * 0.2f, 1.4f, 3.0f, 1.2f, trim);
+                if (face == 3) {
+                    for (int louver = 0; louver < 3; ++louver)
+                        add(0.0f, 0.95f + louver * 0.6f, span - 10.0f, 0.2f, trim);
+                }
+            } else if (residential) {
+                const float doorWidth = face == 0 ? 2.4f : 1.2f;
+                add(face == 3 ? span * 0.3f : 0.0f, 1.2f, doorWidth, 2.4f, door);
+                if (face == 3) add(0.0f, (groundHeight + b.height) / 2.0f,
+                                   1.0f, b.height - groundHeight, trim);
+                if (face == 1) add(span * 0.2f, 1.5f, 1.6f, 0.6f, trim);
+            } else {
+                if (face == 0) {
+                    add(-span / 2.0f + 1.9f, 1.3f, 1.8f, 2.6f, door);
+                    // Shop glazing starts after the entrance and repeats in bays.
+                    for (float u = -span / 2.0f + 4.8f; u + 1.5f < span / 2.0f - 1.0f; u += 3.2f)
+                        add(u, 1.7f, 3.0f, 2.6f, window);
+                    add(0.0f, 3.25f, span - 1.0f, 0.5f, {0.78f, 0.32f, 0.24f});
+                    add(0.0f, 4.05f, span - 1.0f, 0.7f, trim);
+                } else if (face == 1) {
+                    add(-span * 0.2f, 1.2f, 1.6f, 2.4f, door);
+                    add(span * 0.1f, 1.4f, 2.6f, 2.8f, door);
+                } else if (face == 2) {
+                    add(0.0f, 1.1f, 1.2f, 2.2f, door);
+                }
+            }
+        }
+    }
+    return details;
+}
+
+void drawBuildingRoof(Renderer& renderer, const Building& b)
+{
+    const bool tower = b.style == BuildingStyle::Tower;
+    const bool residential = b.style == BuildingStyle::Residential;
+    const Color trim = tower ? Color{0.18f, 0.25f, 0.31f}
+                            : (residential ? Color{0.54f, 0.42f, 0.33f}
+                                           : Color{0.43f, 0.42f, 0.39f});
+    // Four low parapets outline the roof without covering its surface.
+    for (float side : {-1.0f, 1.0f}) {
+        drawBox(renderer, b.x, b.height + 0.4f, b.z + side * (b.depth / 2.0f - 0.25f),
+                b.width, 0.8f, 0.5f, trim);
+        drawBox(renderer, b.x + side * (b.width / 2.0f - 0.25f), b.height + 0.4f, b.z,
+                0.5f, 0.8f, b.depth - 1.0f, trim);
+    }
+    if (tower) {
+        drawBox(renderer, b.x - b.width / 2.0f + 4.0f, b.height + 1.25f,
+                b.z - b.depth / 2.0f + 3.5f, 6.0f, 2.5f, 4.0f, {0.54f, 0.58f, 0.63f});
+        drawBox(renderer, b.x + b.width / 2.0f - 2.5f, b.height + 1.5f,
+                b.z + b.depth / 2.0f - 2.5f, 2.4f, 3.0f, 2.4f, trim);
+    } else if (residential) {
+        drawBox(renderer, b.x, b.height + 1.2f, b.z - b.depth / 4.0f,
+                3.0f, 2.4f, 3.0f, trim);
+        for (float side : {-1.0f, 1.0f})
+            drawBox(renderer, b.x + side * b.width / 4.0f, b.height + 1.2f,
+                    b.z + b.depth / 4.0f, 1.0f, 2.4f, 1.0f, trim);
+    } else {
+        const int units = std::max(1, static_cast<int>(b.width / 12.0f));
+        for (int i = 0; i < units; ++i)
+            drawBox(renderer, b.x + (i - (units - 1) / 2.0f) * 6.0f,
+                    b.height + 0.6f, b.z + b.depth / 4.0f, 2.0f, 1.2f, 1.5f, trim);
+    }
 }
 
 void drawDisc(Renderer& renderer, float y, float diameter, Color color)
@@ -112,6 +274,19 @@ void City::render(Renderer& renderer) const
             drawRoadLine(renderer, center + 2.0f, start - 0.5f, 4.0f, false, white);
             drawRoadLine(renderer, center - 2.0f, end + 0.5f, 4.0f, false, white);
         }
+    }
+
+    // Each building's center is half its height so its base rests at y=0.
+    for (const Building& building : startingBuildings) {
+        drawBox(renderer, building.x, building.height / 2.0f, building.z,
+                building.width, building.height, building.depth, building.color);
+        drawBuildingRoof(renderer, building);
+    }
+
+    // Generate the fixed facade transforms once; shared quad VBOs draw them.
+    static const std::vector<FacadeDetail> facadeDetails = makeFacadeDetails();
+    for (const FacadeDetail& detail : facadeDetails) {
+        renderer.draw(MeshId::Quad, detail.model, detail.color);
     }
 
     // Starting tower: the shared cube is centered, so lift its center by
