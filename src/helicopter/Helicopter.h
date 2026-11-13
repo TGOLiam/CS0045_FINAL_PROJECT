@@ -13,7 +13,8 @@ private:
     float mainRotorDegrees_ = 0.0f;
     float tailRotorDegrees_ = 0.0f;
     // The model's nose points along +X; position_.y is the fixed altitude.
-    Vec3 position_ = {0.0f, 1.5f, 0.0f};
+    // Start above the planned 25-unit central tower and its rooftop helipad.
+    Vec3 position_ = {0.0f, 25.8f, 0.0f};
     float forwardTilt_ = 0.0f;
     float sidewaysTilt_ = 0.0f;
 };

@@ -45,5 +45,5 @@ Matrix4 Camera::projectionMatrix(int width, int height) const
     const int safeWidth = std::max(width, 1);
     const int safeHeight = std::max(height, 1);
     return Matrix4::perspective(60.0f, static_cast<float>(safeWidth) / safeHeight,
-                                0.1f, 100.0f);
+                                0.1f, 1000.0f);
 }
