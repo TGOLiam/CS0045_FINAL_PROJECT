@@ -2,6 +2,8 @@
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
+#include <algorithm>
+#include <chrono>
 #include <iostream>
 
 int Application::run(int argc, char** argv)
@@ -25,21 +27,56 @@ int Application::run(int argc, char** argv)
         return 1;
     }
 
-    // Temporary Stage 1 callbacks until the frame loop and Input are integrated.
-    glutDisplayFunc([]() {
-        glClearColor(0.08f, 0.1f, 0.14f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glutSwapBuffers();
+    glutSetWindowData(this);
+    // FreeGLUT requires a display callback; the application loop draws frames.
+    glutDisplayFunc([]() {});
+    glutReshapeFunc([](int width, int height) {
+        auto* app = static_cast<Application*>(glutGetWindowData());
+        app->width_ = std::max(width, 1);
+        app->height_ = std::max(height, 1);
     });
+    // Temporary exit binding until Input is integrated.
     glutKeyboardFunc([](unsigned char key, int, int) {
-        if (key == 27) glutLeaveMainLoop();
+        if (key == 27) {
+            static_cast<Application*>(glutGetWindowData())->quitRequested_ = true;
+        }
+    });
+    glutCloseFunc([]() {
+        auto* app = static_cast<Application*>(glutGetWindowData());
+        app->windowId_ = 0;
+        app->quitRequested_ = true;
     });
 
     glutFullScreen();
-    glutMainLoop();
-    if (glutGetWindow() != 0) {
+    auto previous = std::chrono::steady_clock::now();
+    while (!quitRequested_) {
+        glutMainLoopEvent();
+        if (quitRequested_) break;
+
+        const auto now = std::chrono::steady_clock::now();
+        const float deltaTime = std::min(
+            std::chrono::duration<float>(now - previous).count(), 0.1f);
+        previous = now;
+        // Input events will be routed here when the Input subsystem is ready.
+        update(deltaTime);
+        render();
+        glutSwapBuffers();
+    }
+    if (windowId_ != 0) {
         glutDestroyWindow(windowId_);
         windowId_ = 0;
     }
     return 0;
+}
+
+void Application::update(float deltaTime)
+{
+    (void)deltaTime;
+}
+
+void Application::render()
+{
+    glViewport(0, 0, width_, height_);
+    glClearColor(0.08f, 0.1f, 0.14f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
