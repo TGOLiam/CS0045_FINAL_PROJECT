@@ -8,7 +8,7 @@ SOURCES := $(sort $(shell find src -type f -name '*.cpp'))
 OBJECTS := $(patsubst src/%.cpp,build/%.o,$(SOURCES))
 DEPENDENCIES := $(OBJECTS:.o=.d)
 
-.PHONY: all clean
+.PHONY: all clean city-asset
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS) Makefile
@@ -21,6 +21,9 @@ build/%.o: src/%.cpp Makefile
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
 -include $(DEPENDENCIES)
+
+city-asset:
+	python3 tools/generate_city.py
 
 clean:
 	rm -rf build

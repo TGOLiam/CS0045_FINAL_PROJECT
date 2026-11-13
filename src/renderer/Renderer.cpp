@@ -102,6 +102,22 @@ void Renderer::draw(MeshId mesh, const Matrix4& model, Color color) const
     meshFor(mesh).draw();
 }
 
+bool Renderer::uploadStaticMesh(const std::vector<float>& positions, GLenum primitive, std::size_t& id)
+{
+    auto mesh = std::make_unique<Mesh>();
+    if (!mesh->upload(positions, primitive)) return false;
+    id = staticMeshes_.size();
+    staticMeshes_.push_back(std::move(mesh));
+    return true;
+}
+
+void Renderer::drawStaticMesh(std::size_t id, const Matrix4& model, Color color) const
+{
+    if (id >= staticMeshes_.size()) throw std::out_of_range("Unknown static mesh");
+    applyTransformAndColor(model, color);
+    staticMeshes_[id]->draw();
+}
+
 void Renderer::drawRange(MeshId mesh, const Matrix4& model, Color color, GLint first, GLsizei count) const
 {
     // Temporary cube faces use this range; scene objects can use draw().
@@ -113,6 +129,8 @@ void Renderer::shutdown()
 {
     // Balance the matrix stacks if shutdown occurs during an interface pass.
     if (interfaceActive_) endInterface();
+    for (const auto& mesh : staticMeshes_) mesh->release();
+    staticMeshes_.clear();
     cube_.release();
     line_.release();
     point_.release();

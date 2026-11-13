@@ -35,6 +35,14 @@ int Application::run(int argc, char** argv)
         return 1;
     }
 
+    if (!city_.initialize(renderer_)) {
+        std::cerr << "Could not initialize city geometry.\n";
+        renderer_.shutdown();
+        glutDestroyWindow(windowId_);
+        windowId_ = 0;
+        return 1;
+    }
+
     glutSetWindowData(this);
     // FreeGLUT requires a display callback; the application loop draws frames.
     glutDisplayFunc([]() {});

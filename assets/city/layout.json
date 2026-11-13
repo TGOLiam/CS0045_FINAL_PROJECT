@@ -1,0 +1,215 @@
+{
+  "chunk_size": 360,
+  "road_spacing": 120,
+  "road_width": 8,
+  "central_tower_height": 32.5,
+  "buildings": [
+    {
+      "x": -144.0,
+      "z": -142.0,
+      "width": 40.0,
+      "depth": 36.0,
+      "height": 45.8,
+      "palette": "residentialClay",
+      "style": "residential"
+    },
+    {
+      "x": -92.0,
+      "z": -146.0,
+      "width": 36.0,
+      "depth": 28.0,
+      "height": 14.7,
+      "palette": "commercialYellow",
+      "style": "commercial"
+    },
+    {
+      "x": -120.0,
+      "z": -92.0,
+      "width": 70.0,
+      "depth": 30.0,
+      "height": 11.3,
+      "palette": "commercialGreen",
+      "style": "commercial"
+    },
+    {
+      "x": -25.0,
+      "z": -142.0,
+      "width": 34.0,
+      "depth": 34.0,
+      "height": 81.5,
+      "palette": "towerBlue",
+      "style": "tower"
+    },
+    {
+      "x": 22.0,
+      "z": -144.0,
+      "width": 40.0,
+      "depth": 36.0,
+      "height": 39.4,
+      "palette": "residentialSand",
+      "style": "residential"
+    },
+    {
+      "x": 0.0,
+      "z": -90.0,
+      "width": 80.0,
+      "depth": 24.0,
+      "height": 11.3,
+      "palette": "commercialPeach",
+      "style": "commercial"
+    },
+    {
+      "x": 95.0,
+      "z": -140.0,
+      "width": 36.0,
+      "depth": 44.0,
+      "height": 29.8,
+      "palette": "residentialRose",
+      "style": "residential"
+    },
+    {
+      "x": 144.0,
+      "z": -144.0,
+      "width": 30.0,
+      "depth": 30.0,
+      "height": 99.0,
+      "palette": "towerGreen",
+      "style": "tower"
+    },
+    {
+      "x": 120.0,
+      "z": -88.0,
+      "width": 60.0,
+      "depth": 22.0,
+      "height": 7.9,
+      "palette": "commercialYellow",
+      "style": "commercial"
+    },
+    {
+      "x": -142.0,
+      "z": 0.0,
+      "width": 36.0,
+      "depth": 70.0,
+      "height": 11.3,
+      "palette": "commercialPeach",
+      "style": "commercial"
+    },
+    {
+      "x": -96.0,
+      "z": -22.0,
+      "width": 36.0,
+      "depth": 36.0,
+      "height": 42.6,
+      "palette": "residentialClay",
+      "style": "residential"
+    },
+    {
+      "x": -96.0,
+      "z": 24.0,
+      "width": 36.0,
+      "depth": 36.0,
+      "height": 26.6,
+      "palette": "residentialSand",
+      "style": "residential"
+    },
+    {
+      "x": -34.0,
+      "z": -36.0,
+      "width": 24.0,
+      "depth": 20.0,
+      "height": 7.9,
+      "palette": "commercialGreen",
+      "style": "commercial"
+    },
+    {
+      "x": 34.0,
+      "z": 36.0,
+      "width": 24.0,
+      "depth": 20.0,
+      "height": 7.9,
+      "palette": "commercialGreen",
+      "style": "commercial"
+    },
+    {
+      "x": 94.0,
+      "z": -22.0,
+      "width": 36.0,
+      "depth": 40.0,
+      "height": 52.2,
+      "palette": "residentialRose",
+      "style": "residential"
+    },
+    {
+      "x": 144.0,
+      "z": -24.0,
+      "width": 36.0,
+      "depth": 36.0,
+      "height": 14.7,
+      "palette": "commercialYellow",
+      "style": "commercial"
+    },
+    {
+      "x": 120.0,
+      "z": 30.0,
+      "width": 46.0,
+      "depth": 28.0,
+      "height": 71.0,
+      "palette": "towerPurple",
+      "style": "tower"
+    },
+    {
+      "x": -144.0,
+      "z": 98.0,
+      "width": 32.0,
+      "depth": 32.0,
+      "height": 88.5,
+      "palette": "towerGreen",
+      "style": "tower"
+    },
+    {
+      "x": -94.0,
+      "z": 94.0,
+      "width": 34.0,
+      "depth": 28.0,
+      "height": 11.3,
+      "palette": "commercialPeach",
+      "style": "commercial"
+    },
+    {
+      "x": -120.0,
+      "z": 148.0,
+      "width": 70.0,
+      "depth": 32.0,
+      "height": 23.4,
+      "palette": "residentialClay",
+      "style": "residential"
+    },
+    {
+      "x": -26.0,
+      "z": 94.0,
+      "width": 36.0,
+      "depth": 30.0,
+      "height": 14.7,
+      "palette": "commercialGreen",
+      "style": "commercial"
+    },
+    {
+      "x": 24.0,
+      "z": 96.0,
+      "width": 38.0,
+      "depth": 36.0,
+      "height": 33.0,
+      "palette": "residentialRose",
+      "style": "residential"
+    },
+    {
+      "x": 0.0,
+      "z": 148.0,
+      "width": 76.0,
+      "depth": 30.0,
+      "height": 23.4,
+      "palette": "residentialClay",
+      "style": "residential"
+    }
+  ]
+}

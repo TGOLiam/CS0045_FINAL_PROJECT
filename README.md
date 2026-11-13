@@ -17,6 +17,34 @@ make
 The current application opens a full-screen window; press Escape to exit. Run
 `make clean` to remove generated build files.
 
+The city is loaded from `assets/city/city.mesh`, so run the program from the
+project root. The asset contains the current fixed 3 × 3 city geometry and solid
+colors, including its roads, buildings and helipad. Its binary format is:
+`CITYMESH` (8 bytes), version and batch count (little-endian uint32), followed
+by batches of primitive and vertex count (uint32), RGBA (four IEEE-754 float32)
+and XYZ positions (three float32 per vertex). Version 1 requires a little-endian
+system. Renderer uploads these static batches once during initialization.
+
+### Editing the city
+
+Edit `assets/city/layout.json` to change starting-chunk building positions,
+dimensions, styles and palette choices, or the central tower's height. Then run:
+
+```sh
+make city-asset
+make
+./build/helicopter-simulator
+```
+
+The generator validates building overlap, road/sidewalk clearance and the
+reserved park and helipad areas before replacing the mesh. It requires Python 3,
+the C++ compiler and the OpenGL development headers; Python is not needed at
+runtime. The generator's geometry rules live in `tools/city/CityGenerator.cpp`.
+The current chunk template requires a 360-unit chunk, 120-unit road spacing,
+and 8-unit roads; the layout file records these fixed values. Generated chunks
+are deterministic variations of the starting layout. Changing tower height also
+requires updating the helicopter's starting altitude in `Helicopter.h`.
+
 ## Renderer interface
 
 Application initializes Renderer after creating the OpenGL context and releases
@@ -31,4 +59,4 @@ storage; `translation * rotation * scale` applies scale first.
 For interface elements, call `beginInterface(width, height)`, draw using model
 transforms in pixel coordinates, then call `endInterface`. The origin is at the
 top-left. The interface pass restores the previous matrices and depth setting.
-The six-colored cube in Application is temporary Stage 1 test scene code.
+The current city asset is a fixed scene; streaming chunks is future work.
