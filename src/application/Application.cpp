@@ -27,7 +27,7 @@ int Application::run(int argc, char** argv)
         return 1;
     }
 
-    // Initialize the temporary cube renderer after creating the context.
+    // Renderer currently uploads the temporary cube; later it will initialize shared meshes.
     if (!renderer_.initialize()) {
         std::cerr << "Could not initialize renderer.\n";
         glutDestroyWindow(windowId_);
@@ -51,7 +51,7 @@ int Application::run(int argc, char** argv)
     });
     glutCloseFunc([]() {
         auto* app = static_cast<Application*>(glutGetWindowData());
-        // Release the temporary cube before FreeGLUT destroys the context.
+        // Release renderer meshes before FreeGLUT destroys the context.
         app->renderer_.shutdown();
         app->windowId_ = 0;
         app->quitRequested_ = true;
@@ -73,7 +73,7 @@ int Application::run(int argc, char** argv)
         glutSwapBuffers();
     }
     if (windowId_ != 0) {
-        // Release the temporary cube before destroying the window.
+        // Release renderer meshes before destroying the window.
         renderer_.shutdown();
         glutDestroyWindow(windowId_);
         windowId_ = 0;
@@ -88,10 +88,16 @@ void Application::update(float deltaTime)
 
 void Application::render()
 {
-    glViewport(0, 0, width_, height_);
-    glClearColor(0.08f, 0.1f, 0.14f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    camera_.apply(width_, height_);
-    // Temporary Stage 1 cube for checking the rendering and camera setup.
-    renderer_.drawCube();
+    renderer_.beginFrame(width_, height_, {0.08f, 0.1f, 0.14f, 1.0f});
+    renderer_.setViewProjection(camera_.viewMatrix(), camera_.projectionMatrix(width_, height_));
+    // Temporary Stage 1 scene: replace this cube and its face colors with scene draws.
+    const Color colors[] = {
+        {0.9f, 0.2f, 0.2f}, {0.2f, 0.7f, 0.9f},
+        {0.2f, 0.8f, 0.3f}, {0.9f, 0.7f, 0.2f},
+        {0.7f, 0.3f, 0.9f}, {0.9f, 0.5f, 0.2f}
+    };
+    const Matrix4 model = Matrix4::identity();
+    for (int face = 0; face < 6; ++face) {
+        renderer_.drawRange(MeshId::Cube, model, colors[face], face * 6, 6);
+    }
 }

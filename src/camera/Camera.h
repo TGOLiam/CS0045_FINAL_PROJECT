@@ -1,7 +1,9 @@
 #pragma once
+#include "../math/Matrix4.h"
 
 class Camera {
 public:
     // Temporary fixed view for the Stage 1 cube.
-    void apply(int width, int height) const;
+    Matrix4 viewMatrix() const;
+    Matrix4 projectionMatrix(int width, int height) const;
 };
