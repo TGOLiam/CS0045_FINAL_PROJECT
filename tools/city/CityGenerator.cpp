@@ -46,6 +46,23 @@ void forEachTree(Callback callback)
     }
 }
 
+enum class DecorKind { Walkway, Plaza, Garden, ServicePad, ParkingPad, Shrub, Planter, Bench, Bin };
+
+struct DecorItem {
+    DecorKind kind;
+    bool lightCrown;
+    float x1;
+    float z1;
+    float x2;
+    float z2;
+};
+
+struct DecorBlock {
+    char key;
+    std::size_t count;
+    const DecorItem* items;
+};
+
 template <typename Callback>
 void forEachCar(Callback callback)
 {
@@ -61,6 +78,182 @@ void forEachCar(Callback callback)
             for (const CarPlacement& car : placements)
                 callback(car.x + chunkX * chunkSize, car.z + chunkZ * chunkSize,
                          car.yaw, car.color);
+        }
+    }
+}
+
+// Block-detail placements from the design reference (metres, chunk-local).
+// Flat items (walkway, plaza, garden, pads) store corner extents [x1,z1,x2,z2];
+// props (shrub, planter, bench, bin) store a center point and lightCrown only
+// matters for shrubs. Park chunks drop the J set together with buildings I1/I2.
+constexpr DecorItem decorBlockA[] = {
+    {DecorKind::Plaza, false, -148.0f, -123.0f, -136.0f, -109.0f},
+    {DecorKind::Garden, false, -153.0f, -76.5f, -126.0f, -70.5f},
+    {DecorKind::Garden, false, -113.0f, -76.5f, -87.0f, -70.5f},
+    {DecorKind::Walkway, false, -83.0f, -93.2f, -67.0f, -90.8f},
+    {DecorKind::Walkway, false, -121.1f, -77.0f, -118.9f, -67.0f},
+    {DecorKind::Plaza, false, -97.0f, -131.0f, -86.0f, -118.0f},
+    {DecorKind::Bench, false, -95.5f, -125.0f, -92.5f, -124.4f},
+    {DecorKind::Walkway, false, -73.0f, -147.2f, -67.0f, -144.8f},
+    {DecorKind::Shrub, false, -148.0f, -74.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, -136.0f, -74.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, -124.0f, -74.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, false, -108.0f, -74.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, -95.0f, -74.0f, 0.0f, 0.0f},
+    {DecorKind::Bin, false, -90.0f, -70.5f, 0.0f, 0.0f},
+    {DecorKind::ServicePad, false, -103.0f, -172.5f, -81.0f, -160.5f},
+    {DecorKind::Planter, false, -101.0f, -168.0f, 0.0f, 0.0f},
+    {DecorKind::Bin, false, -96.0f, -166.0f, 0.0f, 0.0f},
+    {DecorKind::ParkingPad, false, -123.0f, -158.0f, -111.0f, -124.0f},
+};
+constexpr DecorItem decorBlockB[] = {
+    {DecorKind::Plaza, false, -33.0f, -125.0f, -17.0f, -117.0f},
+    {DecorKind::Walkway, false, -45.2f, -125.0f, -42.8f, -67.0f},
+    {DecorKind::Shrub, false, -15.0f, -120.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, -15.0f, -110.0f, 0.0f, 0.0f},
+    {DecorKind::Planter, false, -35.0f, -120.0f, 0.0f, 0.0f},
+    {DecorKind::Planter, false, -35.0f, -110.0f, 0.0f, 0.0f},
+    {DecorKind::Garden, false, 2.0f, -126.0f, 42.0f, -116.0f},
+    {DecorKind::Shrub, false, 10.0f, -121.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, false, 22.0f, -121.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, 34.0f, -118.0f, 0.0f, 0.0f},
+    {DecorKind::Walkway, false, 42.9f, -126.0f, 45.1f, -67.0f},
+    {DecorKind::Walkway, false, -1.5f, -78.0f, 1.5f, -67.0f},
+    {DecorKind::Bin, false, -36.0f, -71.0f, 0.0f, 0.0f},
+    {DecorKind::Planter, false, 36.0f, -71.0f, 0.0f, 0.0f},
+    {DecorKind::ParkingPad, false, -8.0f, -159.0f, 2.0f, -126.0f},
+};
+constexpr DecorItem decorBlockC[] = {
+    {DecorKind::Walkway, false, 70.0f, -141.2f, 72.5f, -67.0f},
+    {DecorKind::Plaza, false, 80.0f, -118.0f, 100.0f, -106.0f},
+    {DecorKind::Plaza, false, 135.0f, -129.0f, 153.0f, -115.0f},
+    {DecorKind::Walkway, false, 160.0f, -145.2f, 162.5f, -67.0f},
+    {DecorKind::Planter, false, 165.0f, -122.0f, 0.0f, 0.0f},
+    {DecorKind::Planter, false, 165.0f, -136.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, false, 80.0f, -104.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, 100.0f, -104.0f, 0.0f, 0.0f},
+    {DecorKind::Walkway, false, 118.7f, -77.0f, 121.3f, -67.0f},
+    {DecorKind::Shrub, false, 108.0f, -72.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, 132.0f, -72.0f, 0.0f, 0.0f},
+    {DecorKind::Bin, false, 126.0f, -70.5f, 0.0f, 0.0f},
+    {DecorKind::ServicePad, false, 115.0f, -172.5f, 131.5f, -160.5f},
+    {DecorKind::Planter, false, 118.0f, -168.0f, 0.0f, 0.0f},
+    {DecorKind::Bin, false, 125.0f, -166.0f, 0.0f, 0.0f},
+};
+constexpr DecorItem decorBlockD[] = {
+    {DecorKind::Walkway, false, -123.0f, -1.2f, -67.0f, 1.2f},
+    {DecorKind::ParkingPad, false, -123.0f, -28.0f, -115.0f, 28.0f},
+    {DecorKind::Bin, false, -119.0f, -31.0f, 0.0f, 0.0f},
+    {DecorKind::Plaza, false, -104.0f, -3.0f, -88.0f, 5.0f},
+    {DecorKind::Walkway, false, -76.2f, -39.0f, -73.8f, 53.0f},
+    {DecorKind::Bin, false, -72.0f, 50.0f, 0.0f, 0.0f},
+    {DecorKind::Walkway, false, -97.1f, 42.0f, -94.9f, 53.0f},
+    {DecorKind::Shrub, false, -102.0f, 48.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, -90.0f, 48.0f, 0.0f, 0.0f},
+};
+constexpr DecorItem decorBlockE[] = {
+    {DecorKind::Plaza, false, -13.0f, 15.0f, 13.0f, 31.0f},
+    {DecorKind::Walkway, false, -2.0f, 31.0f, 2.0f, 53.0f},
+    {DecorKind::Walkway, false, -35.1f, -25.0f, -32.9f, 53.0f},
+    {DecorKind::Garden, false, -46.0f, -26.0f, -22.5f, -17.0f},
+    {DecorKind::Shrub, false, -42.0f, -21.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, -27.0f, -18.0f, 0.0f, 0.0f},
+    {DecorKind::Walkway, false, 32.9f, 47.0f, 35.1f, 53.0f},
+    {DecorKind::Shrub, false, 28.0f, 50.0f, 0.0f, 0.0f},
+    {DecorKind::Bin, false, 41.9f, 50.0f, 0.0f, 0.0f},
+    {DecorKind::Bench, false, -16.0f, 24.0f, -15.4f, 28.0f},
+    {DecorKind::Bench, false, 15.4f, 24.0f, 16.0f, 28.0f},
+    {DecorKind::Shrub, false, -9.0f, 38.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, -9.0f, 46.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, false, 9.0f, 38.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, 9.0f, 46.0f, 0.0f, 0.0f},
+    {DecorKind::Planter, false, -8.0f, 51.0f, 0.0f, 0.0f},
+    {DecorKind::Planter, false, 8.0f, 51.0f, 0.0f, 0.0f},
+    {DecorKind::Bin, false, 4.6f, 49.4f, 0.0f, 0.0f},
+};
+constexpr DecorItem decorBlockF[] = {
+    {DecorKind::Walkway, false, 92.8f, -2.0f, 95.2f, 53.0f},
+    {DecorKind::Garden, false, 78.0f, 2.0f, 110.0f, 10.0f},
+    {DecorKind::Shrub, false, 84.0f, 6.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, 96.0f, 6.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, false, 104.0f, 6.0f, 0.0f, 0.0f},
+    {DecorKind::Walkway, false, 143.8f, -6.0f, 146.2f, 53.0f},
+    {DecorKind::Garden, false, 122.0f, -52.0f, 166.0f, -44.0f},
+    {DecorKind::Shrub, false, 128.0f, -48.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, 160.0f, -48.0f, 0.0f, 0.0f},
+    {DecorKind::Plaza, false, 105.0f, 45.0f, 135.0f, 53.0f},
+    {DecorKind::Bench, false, 107.6f, 49.0f, 108.2f, 52.0f},
+    {DecorKind::Bench, false, 131.4f, 49.0f, 132.0f, 52.0f},
+    {DecorKind::Planter, false, 102.0f, 48.0f, 0.0f, 0.0f},
+    {DecorKind::Planter, false, 138.0f, 48.0f, 0.0f, 0.0f},
+    {DecorKind::Bin, false, 119.0f, 51.0f, 0.0f, 0.0f},
+};
+constexpr DecorItem decorBlockG[] = {
+    {DecorKind::Plaza, false, -152.0f, 114.0f, -136.0f, 126.0f},
+    {DecorKind::Shrub, false, -150.0f, 116.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, -138.0f, 116.0f, 0.0f, 0.0f},
+    {DecorKind::Walkway, false, -173.0f, 96.8f, -161.0f, 99.2f},
+    {DecorKind::Walkway, false, -166.2f, 99.0f, -163.8f, 67.0f},
+    {DecorKind::Bin, false, -70.0f, 88.0f, 0.0f, 0.0f},
+    {DecorKind::Walkway, false, -75.0f, 92.8f, -67.0f, 95.2f},
+    {DecorKind::Garden, false, -112.0f, 110.0f, -76.0f, 118.0f},
+    {DecorKind::Shrub, true, -106.0f, 114.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, -82.0f, 114.0f, 0.0f, 0.0f},
+    {DecorKind::Garden, false, -152.0f, 165.0f, -88.0f, 172.0f},
+    {DecorKind::Walkway, false, -121.2f, 164.0f, -118.8f, 173.0f},
+    {DecorKind::Shrub, true, -146.0f, 168.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, false, -94.0f, 168.0f, 0.0f, 0.0f},
+};
+constexpr DecorItem decorBlockH[] = {
+    {DecorKind::Walkway, false, -27.2f, 79.0f, -24.8f, 67.0f},
+    {DecorKind::Bin, false, -44.0f, 72.0f, 0.0f, 0.0f},
+    {DecorKind::Garden, false, 6.0f, 116.0f, 42.0f, 130.0f},
+    {DecorKind::Shrub, false, 12.0f, 123.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, 24.0f, 123.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, false, 36.0f, 123.0f, 0.0f, 0.0f},
+    {DecorKind::Walkway, false, 44.0f, 94.8f, 53.0f, 97.2f},
+    {DecorKind::Shrub, false, 49.0f, 92.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, 49.0f, 100.0f, 0.0f, 0.0f},
+    {DecorKind::Garden, false, -14.0f, 164.0f, 14.0f, 172.0f},
+    {DecorKind::Walkway, false, -1.2f, 164.0f, 1.2f, 173.0f},
+    {DecorKind::Bench, false, 6.0f, 169.9f, 8.0f, 170.4f},
+    {DecorKind::Planter, false, -9.0f, 170.0f, 0.0f, 0.0f},
+};
+constexpr DecorItem decorBlockJ[] = {
+    {DecorKind::Walkway, false, 94.8f, 121.0f, 97.2f, 173.0f},
+    {DecorKind::Bench, false, 95.2f, 145.0f, 97.2f, 146.0f},
+    {DecorKind::Shrub, false, 88.0f, 133.0f, 0.0f, 0.0f},
+    {DecorKind::Shrub, true, 104.0f, 133.0f, 0.0f, 0.0f},
+    {DecorKind::Walkway, false, 142.9f, 156.0f, 145.1f, 173.0f},
+    {DecorKind::Bin, false, 150.0f, 166.0f, 0.0f, 0.0f},
+};
+
+constexpr DecorBlock decorBlocks[] = {
+    {'A', std::size(decorBlockA), decorBlockA},
+    {'B', std::size(decorBlockB), decorBlockB},
+    {'C', std::size(decorBlockC), decorBlockC},
+    {'D', std::size(decorBlockD), decorBlockD},
+    {'E', std::size(decorBlockE), decorBlockE},
+    {'F', std::size(decorBlockF), decorBlockF},
+    {'G', std::size(decorBlockG), decorBlockG},
+    {'H', std::size(decorBlockH), decorBlockH},
+    {'J', std::size(decorBlockJ), decorBlockJ},
+};
+
+template <typename Callback>
+void forEachDecor(Callback callback)
+{
+    // The J block replaces the park's southeast lot, so it only exists where
+    // the generator placed I1/I2; every other block set is fixed.
+    for (const DecorBlock& block : decorBlocks) {
+        for (int chunkZ = -1; chunkZ <= 1; ++chunkZ) {
+            for (int chunkX = -1; chunkX <= 1; ++chunkX) {
+                if (block.key == 'J' && chunkHasPark(chunkX, chunkZ)) continue;
+                const float offsetX = chunkX * chunkSize;
+                const float offsetZ = chunkZ * chunkSize;
+                for (const DecorItem* it = block.items; it != block.items + block.count; ++it)
+                    callback(*it, offsetX, offsetZ);
+            }
         }
     }
 }
@@ -520,6 +713,55 @@ void City::render(Renderer& renderer) const
             drawSurface(renderer, blockX + offset, blockZ, sidewalkWidth, blockWidth - 2.0f * sidewalkWidth, 0.15f, sidewalk);
         }
     }
+
+    // Block details from the design reference: warm paving, grass strips and
+    // pads fill the gaps between buildings. Heights keep the reference layer
+    // stack (ground 0, asphalt 0.05, sidewalk 0.15) clear of z-fighting:
+    // pads 0.065, bay lines 0.075, walkways/plazas 0.16, gardens 0.18.
+    const Color walkway = {213.0f/255.0f, 203.0f/255.0f, 186.0f/255.0f};
+    const Color plaza = {203.0f/255.0f, 194.0f/255.0f, 180.0f/255.0f};
+    const Color grassPatch = {126.0f/255.0f, 161.0f/255.0f, 89.0f/255.0f};
+    const Color servicePad = {179.0f/255.0f, 172.0f/255.0f, 157.0f/255.0f};
+    const Color parkingPad = {60.0f/255.0f, 66.0f/255.0f, 75.0f/255.0f};
+    const Color bayLine = {242.0f/255.0f, 242.0f/255.0f, 242.0f/255.0f};
+    constexpr float baySpacing = 2.6f;
+    constexpr float bayWidth = 0.15f;
+    forEachDecor([&](const DecorItem& item, float ox, float oz) {
+        if (item.kind == DecorKind::Shrub || item.kind == DecorKind::Planter ||
+            item.kind == DecorKind::Bench || item.kind == DecorKind::Bin)
+            return; // Furniture is drawn in the next pass.
+        const bool horizontal = item.x2 >= item.z2;
+        const float x = ox + (item.x1 + item.x2) / 2.0f;
+        const float z = oz + (item.z1 + item.z2) / 2.0f;
+        const float w = horizontal ? item.x2 - item.x1 : item.z2 - item.z1;
+        const float d = horizontal ? item.z2 - item.z1 : item.x2 - item.x1;
+        float y = 0.16f;
+        Color surface = walkway;
+        switch (item.kind) {
+        case DecorKind::Garden: y = 0.18f; surface = grassPatch; break;
+        case DecorKind::ServicePad: y = 0.065f; surface = servicePad; break;
+        case DecorKind::ParkingPad: y = 0.065f; surface = parkingPad; break;
+        case DecorKind::Plaza: y = 0.16f; surface = plaza; break;
+        default: break;
+        }
+        drawSurface(renderer, x, z, w, d, y, surface);
+        if (item.kind == DecorKind::ParkingPad) {
+            // Bay separators lie along the pad's longer side, spaced across
+            // the shorter side at 2.6 m so stalls read at any pad size.
+            const bool spacedAlongX = w <= d;
+            const float crossCount = spacedAlongX ? w : d;
+            const float lineLength = (spacedAlongX ? d : w) - 1.0f;
+            const int lines = static_cast<int>(std::floor(crossCount / baySpacing));
+            const float step = crossCount / (lines + 1);
+            for (int i = 1; i <= lines; ++i) {
+                const float offset = i * step - crossCount / 2.0f;
+                if (spacedAlongX)
+                    drawSurface(renderer, x + offset, z, bayWidth, lineLength, 0.075f, bayLine);
+                else
+                    drawSurface(renderer, x, z + offset, lineLength, bayWidth, 0.075f, bayLine);
+            }
+        }
+    });
 
     // Center and stop markings use the shared GL_LINES mesh, slightly above asphalt.
     const Color yellow = {0.91f, 0.77f, 0.28f};
