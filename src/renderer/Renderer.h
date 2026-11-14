@@ -16,6 +16,7 @@ public:
     void setViewProjection(const Matrix4& view, const Matrix4& projection);
     // Camera supplies view and projection; scene objects supply model and color.
     void begin3D(const Matrix4& view, const Matrix4& projection);
+    void drawSkybox(Vec3 cameraPosition);
     // Interface coordinates have their origin at the top-left of the window.
     void beginInterface(int width, int height);
     void endInterface();

@@ -25,18 +25,22 @@ void Camera::zoom(float distanceDelta)
     distance_ = std::clamp(distance_ + distanceDelta, minDistance_, maxDistance_);
 }
 
-Matrix4 Camera::viewMatrix() const
+Vec3 Camera::position() const
 {
     const float yaw = yawDegrees_ * pi / 180.0f;
     const float pitch = pitchDegrees_ * pi / 180.0f;
     // Pitch controls height; the remaining horizontal distance rotates with yaw.
     const float horizontalDistance = distance_ * std::cos(pitch);
-    const Vec3 eye = {
+    return {
         target_.x + horizontalDistance * std::sin(yaw),
         target_.y + distance_ * std::sin(pitch),
         target_.z + horizontalDistance * std::cos(yaw)
     };
-    return Matrix4::lookAt(eye, target_, {0, 1, 0});
+}
+
+Matrix4 Camera::viewMatrix() const
+{
+    return Matrix4::lookAt(position(), target_, {0, 1, 0});
 }
 
 Matrix4 Camera::projectionMatrix(int width, int height) const

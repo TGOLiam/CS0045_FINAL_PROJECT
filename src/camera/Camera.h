@@ -7,6 +7,7 @@ public:
     void setTarget(Vec3 target);
     void orbit(float yawDeltaDegrees, float pitchDeltaDegrees);
     void zoom(float distanceDelta);
+    Vec3 position() const;
     Matrix4 viewMatrix() const;
     Matrix4 projectionMatrix(int width, int height) const;
 

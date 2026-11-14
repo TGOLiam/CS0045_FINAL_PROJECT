@@ -109,6 +109,7 @@ void Application::render()
     const Vec3 helicopterPosition = helicopter_.position();
     renderer_.beginFrame(width_, height_, {0.08f, 0.1f, 0.14f, 1.0f});
     renderer_.begin3D(camera_.viewMatrix(), camera_.projectionMatrix(width_, height_));
+    renderer_.drawSkybox(camera_.position());
     city_.render(renderer_);
     const float helicopterScale = customization_.scale();
     const Matrix4 helicopterTransform = Matrix4::translation(helicopterPosition.x,

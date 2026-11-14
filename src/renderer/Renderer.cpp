@@ -38,6 +38,45 @@ void Renderer::begin3D(const Matrix4& view, const Matrix4& projection)
     setViewProjection(view, projection);
 }
 
+void Renderer::drawSkybox(Vec3 cameraPosition)
+{
+    if (interfaceActive_) throw std::logic_error("Cannot draw skybox during interface pass");
+
+    // Keep the cube centered on the eye. All corners fit within the current
+    // 1000-unit far plane, and camera rotation remains part of the view.
+    const Matrix4 model = Matrix4::translation(cameraPosition.x, cameraPosition.y, cameraPosition.z)
+                        * Matrix4::scale(800.0f, 800.0f, 800.0f);
+    const Color colors[] = {
+        {0.48f, 0.70f, 0.88f}, {0.48f, 0.70f, 0.88f},
+        {0.48f, 0.70f, 0.88f}, {0.48f, 0.70f, 0.88f},
+        {0.65f, 0.81f, 0.94f}, {0.72f, 0.78f, 0.80f}
+    };
+
+    GLint previousMode = GL_MODELVIEW;
+    glGetIntegerv(GL_MATRIX_MODE, &previousMode);
+    // Some compatibility drivers report zero before the first matrix mode is set.
+    if (previousMode != GL_MODELVIEW && previousMode != GL_PROJECTION && previousMode != GL_TEXTURE)
+        previousMode = GL_MODELVIEW;
+    glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_CURRENT_BIT);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_CULL_FACE);
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    for (int face = 0; face < 6; ++face) {
+        applyTransformAndColor(model, colors[face]);
+        cube_.drawRange(face * 6, 6);
+    }
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(static_cast<GLenum>(previousMode));
+    glPopAttrib();
+}
+
 void Renderer::beginInterface(int width, int height)
 {
     if (interfaceActive_ || width <= 0 || height <= 0)
