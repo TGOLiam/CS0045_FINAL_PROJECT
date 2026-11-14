@@ -210,13 +210,21 @@ void Application::update(float deltaTime) {
 
   // Size changes acceleration only. Every size shares the faster top speed.
   const float acceleration = customization_.flightAccelerationMultiplier();
-  constexpr float maxHorizontalSpeed = 42.0f;
+  constexpr float accelerationScale = 0.75f;
+  // Physics uses metres/second; the flight HUD displays kilometres/hour.
+  constexpr float maxHorizontalSpeed = 200.0f / 3.6f;
   constexpr float maxVerticalSpeed = 21.0f;
   constexpr float baseRudderAcceleration = 120.0f;
   constexpr float baseMaxRudderSpeed = 45.0f;
-  const FlightTuning tuning = {12.0f * acceleration, 9.0f * acceleration,
-                               0.8f, 1.2f, maxHorizontalSpeed, maxVerticalSpeed,
-                               baseRudderAcceleration * acceleration, 2.0f,
+  const FlightTuning tuning = {12.0f * acceleration * accelerationScale,
+                               9.0f * acceleration * accelerationScale,
+                               0.8f,
+                               1.2f,
+                               maxHorizontalSpeed,
+                               maxVerticalSpeed,
+                               baseRudderAcceleration * acceleration *
+                                   accelerationScale,
+                               2.0f,
                                baseMaxRudderSpeed * acceleration};
 
   // Fixed physics updates.

@@ -22,8 +22,8 @@ void Helicopter::update(float deltaTime, FlightInput input,
                         const FlightTuning &tuning, float scale,
                         const std::vector<Aabb> &obstacles,
                         float groundHeight) {
-  constexpr float mainRotorRpm = 180.0f;
-  constexpr float tailRotorRpm = 360.0f;
+    constexpr float mainRotorRpm = 240.0f;
+    constexpr float tailRotorRpm = 480.0f;
   mainRotorDegrees_ =
       std::fmod(mainRotorDegrees_ + mainRotorRpm * 6.0f * deltaTime, 360.0f);
   tailRotorDegrees_ =
@@ -94,17 +94,17 @@ void Helicopter::draw(const Renderer &renderer, const Matrix4 &worldTransform,
   box({-0.35f, 1.12f, 0.0f}, {0.16f, 0.45f, 0.16f}, metal);
   box({-0.35f, 1.38f, 0.0f}, {0.35f, 0.12f, 0.35f}, hubMetal);
 
-    // Two opposing half-blades make a single 7-unit rotor bar.
+    // Two opposing half-blades make a single 7.5-unit rotor bar.
   for (int side = 0; side < 2; ++side) {
     const Matrix4 blade = aircraft * Matrix4::translation(-0.35f, 1.45f, 0.0f) *
                           Matrix4::rotation(mainRotorDegrees_ + side * 180.0f,
                                             {0.0f, 1.0f, 0.0f});
     renderer.draw(MeshId::Cube,
-                      blade * Matrix4::translation(1.75f, 0.0f, 0.0f) *
-                          Matrix4::scale(3.50f, 0.05f, 0.22f),
+                      blade * Matrix4::translation(1.875f, 0.0f, 0.0f) *
+                          Matrix4::scale(3.75f, 0.05f, 0.22f),
                   metal);
     renderer.draw(MeshId::Cube,
-                      blade * Matrix4::translation(3.32f, 0.0f, 0.0f) *
+                      blade * Matrix4::translation(3.57f, 0.0f, 0.0f) *
                       Matrix4::scale(0.36f, 0.056f, 0.22f),
                   yellow);
   }
