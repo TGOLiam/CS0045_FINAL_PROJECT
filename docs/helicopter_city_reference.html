@@ -1,0 +1,304 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Helicopter city: layout and model reference</title>
+<style>
+body{margin:0;font:13px/1.5 system-ui,sans-serif;background:#12171d;color:#d6dde5}
+header{padding:10px 18px;background:#0b0f13;display:flex;gap:14px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #263039}
+h1{font-size:16px;margin:0 8px 0 0;font-weight:600}h2{font-size:15px;margin:16px 0 6px}h3{font-size:13px;margin:8px 0 4px;color:#9cc4e4}
+nav button{background:#1c242d;color:#d6dde5;border:1px solid #33404c;padding:6px 12px;cursor:pointer;border-radius:3px;font:inherit}
+nav button.on{background:#2f6b9a;border-color:#6fb0e0}
+section{display:none;padding:14px 18px}section.on{display:block}
+.row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}.card{background:#1a2129;border:1px solid #2b3641;border-radius:4px;padding:10px;margin-bottom:10px}
+.side{width:400px;max-width:100%}ul{margin:4px 0;padding-left:18px}li{margin:2px 0}
+i{display:inline-block;width:12px;height:12px;margin-right:6px;vertical-align:-2px;border:1px solid #0008}
+table{border-collapse:collapse;font-size:12px}td,th{border:1px solid #2b3641;padding:2px 7px;text-align:left}th{background:#222c36}
+.pn{background:#262f39;border:1px solid #33404c}.cap{font-size:11px;text-align:center;padding:2px;color:#aab6c2}
+.flex{display:flex;gap:6px;flex-wrap:wrap}pre{background:#0b0f13;padding:10px;overflow:auto;max-height:420px;font-size:11px}
+.ol{stroke-width:0}.sel .ol{stroke-width:1.2px}svg{display:block;max-width:100%;height:auto}
+code{background:#0b0f13;padding:0 3px}.bad{color:#ff8a80}
+</style>
+<header><h1>Helicopter city: layout and model reference</h1>
+<nav><button class="on" data-t="a">City layout</button><button data-t="b">Building types</button><button data-t="c">Tree, road, car</button></nav>
+<span style="opacity:.65">metres · Y up · X right · Z down on screen (top view)</span></header>
+
+<section id="a" class="on"><div class="row"><div><div class="card"><button id="overview">Connected 3×3 chunks</button> <button id="starting">Starting chunk</button> <button id="generated">Generated chunk</button><p>Orange dashed lines show chunk boundaries, not walls. Select a building for its world position and height.</p></div><div id="city"></div></div><div class="side">
+<div class="card"><h3>Selected building (click one)</h3><div id="info">Nothing selected.</div></div>
+<div class="card"><h3>Dimensions</h3><ul id="spec"></ul></div>
+<div class="card"><h3>Legend</h3><div id="leg"></div></div>
+<div class="card"><h3>Validation (computed from the data below)</h3><ul id="val" style="list-style:none;padding:0"></ul></div></div></div>
+<h2>Building placement data</h2><div class="card"><table id="bt"></table></div>
+<details class="card"><summary>JS data structure: buildings, roads, park, trees, cars</summary><pre id="js"></pre></details></section>
+
+<section id="b"><div id="bref"></div>
+<div class="card"><h2 style="margin-top:0">Construction rules (all three types)</h2><ul>
+<li><b>Parameters:</b> <code>w</code> (X extent), <code>d</code> (Z extent), <code>h</code>. Height is snapped to <code>g + n·f</code> (ground floor + n floors), so storeys are always whole. Parapet (0.8 high, 0.5 thick) sits above <code>h</code>.</li>
+<li><b>Fixed-size details:</b> windows, doors, balcony slabs, awnings, sign bands, vents, HVAC boxes and the helipad never scale. Only the wall box scales; detail <i>counts</i> change.</li>
+<li><b>Repetition:</b> bays <code>n = floor((W − 2.4) / pitch)</code> across a facade of width W, leftover split equally as side margins <code>(W − n·pitch)/2 ≥ 1.2</code>. Rows repeat once per floor at pitch f. Ground-floor glazing uses the same rule inside its free span.</li>
+<li><b>Doors:</b> always start at v = 0 and are shorter than the ground floor, so they stay at ground level whatever the height.</li>
+<li><b>Roof:</b> deck quad at y = h; parapet = 4 thin boxes; extras are fixed unit boxes at fixed corner offsets (never over the pad); optional helipad = 24-gon disc Ø18 at h + 0.05, yellow ring and white H quads at h + 0.08.</li>
+<li><b>Facade orientation:</b> a facade is built once in local (u, v) coordinates, then placed with yaw about +Y: +Z 0°, +X 90°, −Z 180°, −X 270° (<code>glRotatef</code>). Elevations above are drawn as seen from outside each face.</li></ul>
+<table><tr><th>Type<th>g / f<th>Window w×h, sill<th>Bay pitch<th>Doors<th>Facade extras<th>Roof extras
+<tr><td>T tower<td>4.5 / 3.5<td>2.0×2.2, 0.6<td>3.0<td>+Z lobby 3.6×3.0 · −Z service 1.8×2.4 · +X 1.6×2.4 · −X 1.4×2.2<td>+Z canopy 5.6×0.3; −Z louvers 3×1.2; −X louver bands<td>HVAC 6×4×2.5, stair 2.4×2.4×3, optional pad Ø18
+<tr><td>R mid-rise<td>4.2 / 3.2<td>1.4×1.6, 0.9<td>4.0 (±Z), 6.0 (±X)<td>+Z lobby 2.4×2.6 · −Z 1.4×2.2 · ±X 1.2×2.2<td>+Z balcony slabs; −X stair strip 1.0 wide; −Z vent<td>bulkhead 3×3×2.4, vents 1×1×2.4
+<tr><td>C low-rise<td>4.5 / 3.4<td>1.6×1.5, 0.9<td>3.2<td>+Z shop 1.8×2.6 · −Z 1.6×2.4 + dock 2.6×2.8 · +X 1.2×2.2<td>+Z storefront glass pitch 3.2, awning 0.5, sign band 0.7<td>AC 2×1.5×1.2, one per 12 m of width</table></div></section>
+
+<section id="c"><div id="props"></div></section>
+
+<script>
+const $=id=>document.getElementById(id);
+const R=(x,y,w,h,f,e='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${f}" ${e}/>`;
+const Cx=(x,z,w,d,f,e)=>R(x-w/2,z-d/2,w,d,f,e);
+const Ci=(x,y,r,f,e='')=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${f}" ${e}/>`;
+const Pg=(p,f,e='')=>`<polygon points="${p.map(v=>v.map(n=>+n.toFixed(2)).join(',')).join(' ')}" fill="${f}" ${e}/>`;
+const TX=(x,y,t,fs,f='#d6dde5',a='middle',e='')=>`<text x="${x}" y="${y}" font-size="${fs}" fill="${f}" text-anchor="${a}" font-family="system-ui" ${e}>${t}</text>`;
+const SV=(vb,w,h,b)=>`<svg viewBox="${vb}" width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">${b}</svg>`;
+const UP=(ox,oy,k,b)=>`<g transform="translate(${ox} ${oy}) scale(${k} ${-k})">${b}</g>`;
+
+/* ---------- constants & data ---------- */
+const CL=[-180,-60,60,180], AS='#464b53',SW='#b8b2a3',GR='#d9d4c5',PC0='#e3dfd2',YL='#e8c547',WH='#f2f2f2',LAWN='#7fae6b',PATH='#eadfbf',WATER='#7fb7d9',GL='#6fa8c7';
+const TY={
+ T:{n:'Tower',g:4.5,f:3.5,roof:'#3f5368',win:'#a9dcef',trim:'#2f3f50',aw:'#2f3f50',door:'#22262e'},
+ R:{n:'Residential mid-rise',g:4.2,f:3.2,roof:'#6f4f43',win:'#86bfe0',trim:'#8a6a55',aw:'#8a6a55',door:'#2c2a2e'},
+ C:{n:'Commercial low-rise',g:4.5,f:3.4,roof:'#8c8173',win:'#8fc1d9',trim:'#6d6a63',aw:'#c8553d',door:'#2c2a2e'}};
+const PC={T:['#5d7a99','#6a8f8f','#7d7aa0'],R:['#c98e6b','#d4a373','#b5776e'],C:['#e0c97a','#c7d3a0','#e6a08c']};
+const snap=(t,h)=>+(TY[t].g+Math.max(1,Math.round((h-TY[t].g)/TY[t].f))*TY[t].f).toFixed(2);
+const BK={ // block key:[blockX,blockZ,[type,dx,dz,w,d,h,colorIdx]...]
+ A:[-120,-120,[['R',-24,-22,40,36,45,0],['C',28,-26,36,28,14,0],['C',0,28,70,30,12,1]]],
+ B:[0,-120,[['T',-25,-22,34,34,80,0],['R',22,-24,40,36,38,1],['C',0,30,80,24,10,2]]],
+ C:[120,-120,[['R',-25,-20,36,44,30,2],['T',24,-24,30,30,100,1],['C',0,32,60,22,9,0]]],
+ D:[-120,0,[['C',-22,0,36,70,12,2],['R',24,-22,36,36,42,0],['R',24,24,36,36,28,1]]],
+ E:[0,0,[['T',0,0,30,30,120,0],['C',-34,-36,24,20,8,1],['C',34,36,24,20,8,1]]],
+ F:[120,0,[['R',-26,-22,36,40,52,2],['C',24,-24,36,36,14,0],['T',0,30,46,28,70,2]]],
+ G:[-120,120,[['T',-24,-22,32,32,90,1],['C',26,-26,34,28,11,2],['R',0,28,70,32,24,0]]],
+ H:[0,120,[['C',-26,-26,36,30,13,1],['R',24,-24,38,36,34,2],['R',0,28,76,30,22,0]]]};
+const BD=[];for(const k in BK){const[bx,bz,l]=BK[k];l.forEach((q,i)=>BD.push({id:k+(i+1),t:q[0],x:bx+q[1],z:bz+q[2],w:q[3],d:q[4],h:k=='E'&&i==0?25:snap(q[0],q[5]),col:PC[q[0]][q[6]],hp:k=='E'&&i==0}))}
+const PK={x:120,z:120,w:106,d:106,paths:[[120,120,4,106],[120,120,106,4]],plazaR:10,ringR:28,pondR:5};
+const PQ=[[14,14],[36,12],[12,36],[24,24],[42,24],[24,42],[44,44],[10,46]];
+const TR=[];for(const sx of[-1,1])for(const sz of[-1,1])PQ.forEach(p=>TR.push([120+sx*p[0],120+sz*p[1],'park']));
+[[-120,-66],[0,-66],[120,-66],[-120,54],[120,54],[-66,-120],[-66,120],[66,-120],[66,0],[120,66],[120,174],[0,174]].forEach(p=>TR.push([p[0],p[1],'street']));
+const CC=[['#d94f3d','#b23a2b'],['#2f6fb5','#255a94'],['#e8c547','#c9a52f'],['#f2f2f2','#cfcfcf'],['#3d8f5f','#2e7048'],['#2b2f36','#1d2026']];
+const CAR=[[-90,-58,'+X',0],[40,-62,'-X',1],[-150,62,'+X',2],[100,58,'-X',3],[-62,-100,'+Z',4],[-58,100,'-Z',5],[58,30,'+Z',1],[62,-30,'-Z',0],[-30,62,'+X',3],[130,58,'-X',2],[178,-100,'+Z',4],[-178,40,'-Z',5]];
+const YAW={'+X':0,'-X':180,'+Z':270,'-Z':90},SCR={'+X':0,'-X':180,'+Z':90,'-Z':-90}; // GL yaw about +Y / SVG screen angle
+
+/* ---------- building geometry ---------- */
+function roofItems(t,w,d){
+ if(t=='T')return[[-w/2+4,-d/2+3.5,6,4,'#8a94a0',2.5],[w/2-2.5,d/2-2.5,2.4,2.4,'#5a6570',3]];
+ if(t=='R')return[[0,-d/4,3,3,'#9c8b80',2.4],[-w/4,d/4,1,1,'#9c8b80',2.4],[w/4,d/4,1,1,'#9c8b80',2.4]];
+ const n=Math.max(1,Math.floor(w/12));return Array.from({length:n},(_,j)=>[(j-(n-1)/2)*6,d/4,2,1.5,'#a79f94',1.2]);
+}
+function fac(t,s,W,H){ // facade rects [colorKey,u0,v0,u1,v1], u grows to the right as seen from outside
+ const q=TY[t],g=q.g,f=q.f,nf=Math.round((H-g)/f),L=[],ax=s[1]=='x',c=W/2;
+ const A=(k,u,v,w,h)=>L.push([k,u,v,u+w,v+h]),D=(u,w,h)=>A('door',u,0,w,h);
+ A('wall',0,0,W,H);
+ const pit={T:3,R:ax?6:4,C:3.2}[t],ww={T:2,R:1.4,C:1.6}[t],wh={T:2.2,R:1.6,C:1.5}[t],sl={T:.6,R:.9,C:.9}[t];
+ const n=Math.floor((W-2.4)/pit),m=(W-n*pit)/2;
+ const gw=(a,b,p,w,v,h)=>{const k=Math.floor((b-a)/p),o=(b-a-k*p)/2;for(let j=0;j<k;j++)A('win',a+o+j*p+(p-w)/2,v,w,h)};
+ for(let i=0;i<nf;i++)for(let j=0;j<n;j++){const u=m+j*pit+(pit-ww)/2;
+  if(t=='R'&&s=='nx'&&Math.abs(u+ww/2-c)<1.2)continue;
+  A('win',u,g+i*f+sl,ww,wh);if(t=='R'&&s=='pz')A('trim',u-.4,g+i*f+.55,ww+.8,.25)}
+ if(t=='T'){
+  if(s=='pz'){D(c-1.8,3.6,3);A('trim',c-2.8,3.3,5.6,.3);gw(1,c-2.4,3,2,.5,2.6);gw(c+2.4,W-1,3,2,.5,2.6)}
+  if(s=='nz'){D(W*.25,1.8,2.4);A('trim',W*.6,.8,3,1.2)}
+  if(s=='px'){D(c-.8,1.6,2.4);gw(1,c-2,3,2,.5,2.6);gw(c+2,W-1,3,2,.5,2.6)}
+  if(s=='nx'){D(W-3,1.4,2.2);A('trim',1,.8,W-5,.3);A('trim',1,1.4,W-5,.3);A('trim',1,2,W-5,.3)}}
+ if(t=='R'){
+  if(s=='pz'){D(c-1.2,2.4,2.6);gw(1,c-2.2,4,1.4,1.2,1.2);gw(c+2.2,W-1,4,1.4,1.2,1.2)}
+  if(s=='nz'){D(W*.2,1.4,2.2);A('trim',W*.6,1.2,1.6,.6)}
+  if(s=='px')D(W/3,1.2,2.2);
+  if(s=='nx'){D(W*.8,1.2,2.2);A('trim',c-.5,g,1,H-g)}}
+ if(t=='C'){
+  if(s=='pz'){D(1,1.8,2.6);gw(3.2,W-1,3.2,3,.4,2.6);A('aw',.5,3,W-1,.5);A('trim',.5,3.7,W-1,.7)}
+  if(s=='nz'){D(W*.3,1.6,2.4);D(W*.6,2.6,2.8)}
+  if(s=='px'){D(c-.6,1.2,2.2);gw(1,c-2,3.2,1.6,.9,1.5);gw(c+2,W-1,3.2,1.6,.9,1.5)}
+  if(s=='nx')gw(2,W-2,5,1.6,.9,1.5)}
+ return L;
+}
+function roofG(t,b){const{w,d,col}=b,q=TY[t];let o=R(-w/2,-d/2,w,d,q.trim)+R(-w/2+.5,-d/2+.5,w-1,d-1,col);
+ roofItems(t,w,d).forEach(i=>o+=Cx(i[0],i[1],i[2],i[3],i[4],'stroke="#0005" stroke-width=".2"'));
+ if(b.hp)o+=Ci(0,0,9,'#3a414c')+Ci(0,0,8,'none','stroke="#e8c547" stroke-width=".5"')+R(-2.5,-3,1,6,'#fff')+R(1.5,-3,1,6,'#fff')+R(-2.5,-.5,5,1,'#fff');
+ return o}
+function iso(b){
+ const{t,w,d,h,col}=b,q=TY[t],s=Math.min(140/((w+d)*.866),195/((w+d)*.5+h)),P=(x,y,z)=>[(x-z)*.866*s,(x+z)*.5*s-y*s],st='stroke="#0007" stroke-width=".5"';
+ const M={pz:(u,v)=>P(-w/2+u,v,d/2),px:(u,v)=>P(w/2,v,d/2-u)};
+ let o=Pg([P(-w/2,0,d/2),P(w/2,0,d/2),P(w/2,h,d/2),P(-w/2,h,d/2)],col,st)+Pg([P(w/2,0,d/2),P(w/2,0,-d/2),P(w/2,h,-d/2),P(w/2,h,d/2)],col,st);
+ for(const sd of['pz','px'])fac(t,sd,sd=='pz'?w:d,h).slice(1).forEach(r=>{const m=M[sd];o+=Pg([m(r[1],r[2]),m(r[3],r[2]),m(r[3],r[4]),m(r[1],r[4])],q[r[0]])});
+ o+=Pg([P(-w/2,h,-d/2),P(w/2,h,-d/2),P(w/2,h,d/2),P(-w/2,h,d/2)],q.roof,`stroke="${q.trim}" stroke-width="1"`);
+ const bx=(x,z,a,c,y0,y1,k)=>Pg([P(x-a/2,y0,z+c/2),P(x+a/2,y0,z+c/2),P(x+a/2,y1,z+c/2),P(x-a/2,y1,z+c/2)],k,st)+Pg([P(x+a/2,y0,z+c/2),P(x+a/2,y0,z-c/2),P(x+a/2,y1,z-c/2),P(x+a/2,y1,z+c/2)],k,st)+Pg([P(x-a/2,y1,z-c/2),P(x+a/2,y1,z-c/2),P(x+a/2,y1,z+c/2),P(x-a/2,y1,z+c/2)],k,st);
+ roofItems(t,w,d).sort((a,c)=>a[0]+a[1]-c[0]-c[1]).forEach(i=>o+=bx(i[0],i[1],i[2],i[3],h,h+i[5],i[4]));
+ if(b.hp){const ring=r=>Array.from({length:24},(_,i)=>P(r*Math.cos(i/24*6.283),h+.1,r*Math.sin(i/24*6.283)));
+  const pl=(x,z,a,c)=>Pg([P(x,h+.2,z),P(x+a,h+.2,z),P(x+a,h+.2,z+c),P(x,h+.2,z+c)],'#fff');
+  o+=Pg(ring(9),'#3a414c')+Pg(ring(8),'none','stroke="#e8c547" stroke-width=".8"')+pl(-2.5,-3,1,6)+pl(1.5,-3,1,6)+pl(-2.5,-.5,5,1)}
+ return SV('0 0 150 200',150,200,`<g transform="translate(75 ${195-(w+d)*.25*s})">${o}</g>`)}
+function elev(t,sd,b){
+ const W=sd[1]=='z'?b.w:b.d,H=b.h,q=TY[t],s=Math.min(140/Math.max(b.w,b.d),215/(H+1)),x0=(150-W*s)/2,y0=225;
+ let o=fac(t,sd,W,H).map(r=>R(x0+r[1]*s,y0-r[4]*s,(r[3]-r[1])*s,(r[4]-r[2])*s,r[0]=='wall'?b.col:q[r[0]])).join('');
+ return SV('0 0 150 232',150,232,o+R(x0,y0-(H+.8)*s,W*s,.8*s,q.trim)+R(0,y0,150,1.5,'#6b7785'))}
+const BV=[['T-S',{t:'T',w:24,d:20,h:snap('T',40),col:PC.T[0]}],['T-C: central tower E1 with helipad',BD.find(b=>b.hp)],
+ ['R-S',{t:'R',w:28,d:24,h:snap('R',22),col:PC.R[0]}],['R-L',{t:'R',w:40,d:36,h:snap('R',46),col:PC.R[1]}],
+ ['C-S',{t:'C',w:24,d:18,h:snap('C',9),col:PC.C[0]}],['C-L',{t:'C',w:70,d:30,h:snap('C',14),col:PC.C[2]}]];
+$('bref').innerHTML=BV.map(([lab,b])=>{const q=TY[b.t],rs=Math.min(140/b.w,140/b.d);
+ const pn=(s,c)=>`<div class="pn">${s}<div class="cap">${c}</div></div>`;
+ return `<h2>${lab} · ${q.n} · ${b.w}×${b.d}×${b.h} m · ${Math.round((b.h-q.g)/q.f)+1} floors</h2><div class="flex">`+pn(iso(b),'isometric, unlit')+
+ [['px','+X'],['nx','−X'],['pz','+Z'],['nz','−Z']].map(([s,l])=>pn(elev(b.t,s,b),`${l} facade (${s[1]=='z'?b.w:b.d} m wide)`)).join('')+
+ pn(SV('0 0 150 150',150,150,`<g transform="translate(75 75) scale(${rs})">${roofG(b.t,b)}</g>`),'roof plan (+Z down)')+'</div>'}).join('');
+
+/* ---------- city ---------- */
+const car=c=>R(-2.2,-.9,4.4,1.8,c[0],'stroke="#0007" stroke-width=".12"')+R(-1.35,-.8,2.3,1.6,c[1])+R(.45,-.7,.5,1.4,GL)+R(-1.35,-.7,.35,1.4,GL)+R(1.08,-.92,.64,.22,'#111')+R(1.08,.7,.64,.22,'#111')+R(-1.72,-.92,.64,.22,'#111')+R(-1.72,.7,.64,.22,'#111');
+const tree=(x,z)=>Ci(x,z,1.8,'#3f7d4a')+Ci(x,z,1.1,'#4f9a5a')+Ci(x,z,.35,'#6b4a2f');
+// Chunk centers are 360 m apart: three complete 120 m blocks per axis.
+// Boundary roads lie at +/-180 and are clipped into two matching half-roads.
+const CHUNK_SIZE = 360;
+function chunkData(cx, cz, starting) {
+ const variant = ((cx * 17 + cz * 31) % 3 + 3) % 3;
+ // Roughly one in three generated chunks reserves the park block.
+ const hasPark = starting || variant === 0;
+ const buildings = BD.map(b => ({...b, hp: starting && b.hp}));
+ if (!starting) {
+  // A fixed template, with deterministic color/height choices per coordinate.
+  buildings.forEach((b,i) => {
+   b.col = PC[b.t][(i + variant) % 3];
+   b.h = snap(b.t, Math.min(45, b.h * (0.55 + variant * 0.1)));
+  });
+  if (!hasPark) {
+  buildings.push({id:'I1',t:'R',x:96,z:100,w:36,d:40,h:snap('R',22),col:PC.R[variant],hp:false});
+  buildings.push({id:'I2',t:'C',x:144,z:140,w:32,d:30,h:snap('C',11),col:PC.C[variant],hp:false});
+  }
+ }
+ return {cx,cz,kind:starting?'starting':'generated',buildings,park:hasPark?PK:null,
+         trees:TR.filter(t=>hasPark || t[2]!='park'),cars:CAR};
+}
+const CHUNKS = [];
+for(let z=-1;z<=1;z++) for(let x=-1;x<=1;x++) CHUNKS.push(chunkData(x,z,x===0&&z===0));
+let selectedBuildings=[];
+function drawChunk(chunk,index) {
+ let o=R(-180,-180,360,360,GR);
+ for(const x of[-120,0,120])for(const z of[-120,0,120])o+=Cx(x,z,106,106,PC0);
+ CL.forEach(c=>o+=R(-180,c-7,360,14,SW)+R(c-7,-180,14,360,SW));
+ CL.forEach(c=>o+=R(-180,c-4,360,8,AS)+R(c-4,-180,8,360,AS));
+ // Every centerline stops before each intersection, including edge intersections.
+ for(const c of CL)for(let k=0;k<CL.length-1;k++) {
+  const a=CL[k]+6,b=CL[k+1]-6;
+  o+=R(a,c-.45,b-a,.3,YL)+R(a,c+.15,b-a,.3,YL);
+  o+=R(c-.45,a,.3,b-a,YL)+R(c+.15,a,.3,b-a,YL);
+  o+=R(b+.5,c,.5,4,WH)+R(a-1,c-4,.5,4,WH);
+  o+=R(c-4,b+.5,4,.5,WH)+R(c,a-1,4,.5,WH);
+ }
+ if(chunk.park) {
+  o+=Cx(PK.x,PK.z,PK.w,PK.d,LAWN);
+  PK.paths.forEach(p=>o+=Cx(p[0],p[1],p[2],p[3],PATH));
+  o+=Ci(120,120,28,'none',`stroke="${PATH}" stroke-width="3"`)+Ci(120,120,10,PATH)+Ci(120,120,5,WATER);
+  o+=TX(120,98,'PARK',5,'#1f4d2b');
+ }
+ chunk.buildings.forEach(b=>{
+  const id=selectedBuildings.length;
+  selectedBuildings.push({...b,x:b.x+chunk.cx*360,z:b.z+chunk.cz*360,chunk:chunk.kind,chunkX:chunk.cx,chunkZ:chunk.cz});
+  o+=`<g data-i="${id}" style="cursor:pointer"><title>${b.id}: ${b.h} m</title><g transform="translate(${b.x} ${b.z})">${roofG(b.t,b)}</g></g>`;
+ });
+ chunk.trees.forEach(t=>o+=tree(t[0],t[1]));
+ chunk.cars.forEach(c=>o+=`<g transform="translate(${c[0]} ${c[1]}) rotate(${SCR[c[2]]})">${car(CC[c[3]])}</g>`);
+ o+=R(-179.8,-179.8,359.6,359.6,'none','stroke="#f09356" stroke-width=".7" stroke-dasharray="5 4"');
+ o+=TX(0,-155,`${chunk.kind.toUpperCase()} (${chunk.cx}, ${chunk.cz})${chunk.park?' · PARK':''}`,7,'#202832');
+ const clip='chunk-'+index;
+ return `<defs><clipPath id="${clip}">${R(-180,-180,360,360,'white')}</clipPath></defs><g transform="translate(${chunk.cx*360} ${chunk.cz*360})"><g clip-path="url(#${clip})">${o}</g></g>`;
+}
+function showChunks(mode) {
+ selectedBuildings=[];
+ const chunks=mode=='starting'?[CHUNKS[4]]:mode=='generated'?[chunkData(0,0,false)]:CHUNKS;
+ const bound=mode=='overview'?560:200;
+ $('city').innerHTML=SV(`${-bound} ${-bound} ${bound*2} ${bound*2}`,850,850,
+   chunks.map(drawChunk).join('')+TX(-bound+10,bound-7,'X →   Z ↓  ·  metres · fixed top-down',mode=='overview'?14:6,'#aab9c8','start'));
+}
+showChunks('overview');
+for(const mode of ['overview','starting','generated']) $(mode).onclick=()=>showChunks(mode);
+$('city').onclick=e=>{
+ const g=e.target.closest('[data-i]');if(!g)return;
+ const b=selectedBuildings[+g.dataset.i];
+ $('info').innerHTML=`<b>${b.id}</b> · ${TY[b.t].n} · ${b.chunk} chunk (${b.chunkX}, ${b.chunkZ})<br>World X ${b.x}, Z ${b.z}<br>Footprint ${b.w}×${b.d} m · height ${b.h} m${b.hp?'<br><b>Unique starting helipad</b>':''}`;
+};
+$('spec').innerHTML=[
+ 'Two chunk types: starting (0,0) and generated at every other integer chunk coordinate',
+ 'Chunk size 360×360 m, boundaries ±180 locally; world offset = chunk coordinate × 360',
+ 'Road centerlines at −180, −60, 60, 180; spacing stays 120 m across every seam',
+ 'Each edge has through-road connections at −60 and +60, plus shared road intersections at both corners',
+ 'Asphalt 8 m, two 4 m lanes; sidewalk 3 m per side. Boundary roads are split equally between neighbors',
+ 'Starting chunk: 24 buildings, unique 25 m helipad tower at (0,0), one park at (120,120)',
+ 'Generated chunk: 24 buildings with a park or 26 without; no helipad; variants are deterministic by chunk coordinate',
+ 'Helipad diameter 18 m on a 30×30 m roof. Tower height 25 m overrides the generic floor-height formula',
+ 'Park selection: normalized (17 × chunkX + 31 × chunkZ) modulo 3 equals zero; parks repeat predictably in about one third of generated chunks',
+ 'Generated means repeated template with deterministic variants; no simulation or random generation in this reference',
+ 'The 3×3 preview is finite. Runtime streaming and edge hiding remain separate implementation work'
+].map(s=>`<li>${s}</li>`).join('');
+$('leg').innerHTML=[[AS,'asphalt'],[SW,'sidewalk'],[PC0,'parcel (dashed = 3 m setback line)'],[YL,'center line / boundary'],[WH,'stop line'],[LAWN,'park lawn'],[PATH,'park path and plaza'],[WATER,'pond'],['#3f7d4a','tree canopy'],[PC.T[0],'T tower roofs (grey-blue family)'],[PC.R[0],'R residential roofs (clay family)'],[PC.C[0],'C commercial roofs (sand family)'],['#3a414c','helipad'],['#d94f3d','cars']].map(l=>`<div><i style="background:${l[0]}"></i>${l[1]}</div>`).join('');
+
+/* ---------- validation ---------- */
+const ov=(p,l,c,L)=>Math.abs(p-c)<(l+L)/2,V=[],ck=(n,c)=>V.push(`<li class="${c?'':'bad'}">${c?'✓':'✗'} ${n}</li>`),BC=[-120,0,120];
+ck('Every building is inside a 100×100 parcel (3 m setback from sidewalks)',BD.every(b=>BC.some(a=>Math.abs(b.x-a)+b.w/2<=50)&&BC.some(a=>Math.abs(b.z-a)+b.d/2<=50)));
+ck('No building touches a road or sidewalk corridor (14 m)',BD.every(b=>CL.every(c=>!ov(b.x,b.w,c,14)&&!ov(b.z,b.d,c,14))));
+let gap=1e9;BD.forEach((a,i)=>BD.slice(i+1).forEach(b=>gap=Math.min(gap,Math.max(Math.abs(a.x-b.x)-(a.w+b.w)/2,Math.abs(a.z-b.z)-(a.d+b.d)/2))));
+ck(`No two buildings overlap (min gap ${gap.toFixed(1)} m)`,gap>0);
+const E1=BD.find(b=>b.hp);ck('Starting helipad tower is centered at (0, 0), height 25 m',E1.x===0&&E1.z===0&&E1.h===25);
+ck(`Helipad Ø18 fits the ${E1.w}×${E1.d} roof inside the parapet, and no roof box intrudes on it`,18<=Math.min(E1.w,E1.d)-1&&roofItems('T',E1.w,E1.d).every(i=>Math.hypot(Math.max(Math.abs(i[0])-i[2]/2,0),Math.max(Math.abs(i[1])-i[3]/2,0))>9));
+ck('Park overlaps no building; its cross paths run edge to edge and meet the sidewalks',!BD.some(b=>ov(b.x,b.w,120,106)&&ov(b.z,b.d,120,106))&&PK.paths.every(p=>Math.max(p[2],p[3])===106)&&PK.x-53===67&&PK.x+53===173);
+ck('Starting park is retained and only one helipad exists',CHUNKS[4].park!==null&&CHUNKS.flatMap(c=>c.buildings).filter(b=>b.hp).length===1);
+ck('Generated chunks include both park and built-up variants',CHUNKS.some(c=>c.kind=='generated'&&c.park)&&CHUNKS.some(c=>c.kind=='generated'&&!c.park));
+ck('All parks remain clear of buildings',CHUNKS.every(c=>!c.park||c.buildings.every(b=>!ov(b.x,b.w,PK.x,PK.w)||!ov(b.z,b.d,PK.z,PK.d))));
+ck('Road grid stays 120 m apart across chunk seams',CL[0]+CHUNK_SIZE===CL[3]&&CL.slice(1).every((c,i)=>c-CL[i]===120));
+ck('Cars sit inside one lane (1.1 m clearance each side) and outside intersection boxes',CAR.every(([x,z,h])=>{const X=h[1]=='X',p=X?z:x,a=X?x:z,rc=CL.find(k=>Math.abs(p-k)<=4);if(rc===undefined)return false;
+ const ln={'+X':[rc,rc+4],'-X':[rc-4,rc],'+Z':[rc-4,rc],'-Z':[rc,rc+4]}[h];return p-.9>=ln[0]&&p+.9<=ln[1]&&CL.every(k=>Math.abs(a-k)>=6.2)}));
+ck('Cars do not overlap each other',CAR.every((a,i)=>CAR.slice(i+1).every(b=>Math.hypot(a[0]-b[0],a[1]-b[1])>4.4)));
+ck('Trees (canopy r 1.8) stay off asphalt and out of building footprints',TR.every(t=>CL.every(c=>Math.abs(t[0]-c)>=5.8&&Math.abs(t[1]-c)>=5.8)&&BD.every(b=>Math.abs(t[0]-b.x)>b.w/2+1.8||Math.abs(t[1]-b.z)>b.d/2+1.8)));
+ck('Park trees stay off paths, ring and plaza and inside the park',TR.filter(t=>t[2]=='park').every(t=>Math.abs(t[0]-120)>=3.8&&Math.abs(t[1]-120)>=3.8&&Math.abs(Math.hypot(t[0]-120,t[1]-120)-28)>=3.3&&Math.abs(t[0]-120)<=51&&Math.abs(t[1]-120)<=51));
+ck('Starting buildings, trees and cars fit within ±180',BD.every(b=>Math.abs(b.x)+b.w/2<=180&&Math.abs(b.z)+b.d/2<=180)&&TR.every(t=>Math.abs(t[0])+1.8<=180&&Math.abs(t[1])+1.8<=180)&&CAR.every(c=>Math.abs(c[0])+(c[2][1]=='X'?2.2:.9)<=180&&Math.abs(c[1])+(c[2][1]=='Z'?2.2:.9)<=180));
+ck('Generated chunks contain no helipad',CHUNKS.filter(c=>c.kind=='generated').every(c=>c.buildings.every(b=>!b.hp)));
+ck('All chunk building footprints stay off roads and each other',CHUNKS.every(c=>c.buildings.every((b,i)=>CL.every(r=>!ov(b.x,b.w,r,14)&&!ov(b.z,b.d,r,14))&&c.buildings.slice(i+1).every(a=>!ov(a.x,a.w,b.x,b.w)||!ov(a.z,a.d,b.z,b.d)))));
+$('val').innerHTML=V.join('');
+
+/* ---------- data views ---------- */
+$('bt').innerHTML='<tr><th>id<th>type<th>X<th>Z<th>width (X)<th>depth (Z)<th>height<th>floors<th>color</tr>'+BD.map(b=>`<tr><td>${b.id}<td>${b.t}<td>${b.x}<td>${b.z}<td>${b.w}<td>${b.d}<td>${b.h}<td>${Math.round((b.h-TY[b.t].g)/TY[b.t].f)+1}<td><i style="background:${b.col}"></i>${b.col}`).join('');
+const J=a=>'[\n  '+a.map(r=>JSON.stringify(r)).join(',\n  ')+'\n]';
+const roads=[];['EW','NS'].forEach(a=>CL.forEach(c=>roads.push([a,c,-180,180,8,4,3])));
+$('js').textContent=`// units: metres. Y up. Building X,Z = footprint center; ground at Y=0; height upward.
+const CITY={chunkSize:360, bounds:180, asphalt:8, lane:4, sidewalk:3, pitch:120, centerlines:${JSON.stringify(CL)},
+ // axis EW runs along X at Z=c; NS runs along Z at X=c. Intersections = every (X,Z) in centerlines x centerlines.
+ roads:/*axis,c,from,to,asphalt,lane,sidewalk*/${J(roads)},
+ buildings:/*id,type,x,z,w,d,h,color*/${J(BD.map(b=>[b.id,b.t,b.x,b.z,b.w,b.d,b.h,b.col]))},
+ park:${JSON.stringify(PK)},
+ trees:/*x,z,kind*/${J(TR)},
+ // A park variant retains the park data and excludes I1/I2.
+ generatedTemplate: ${J(chunkData(1,0,false).buildings.map(b=>[b.id,b.t,b.x,b.z,b.w,b.d,b.h,b.col]))},
+ chunkTypes: {starting: "unique helipad + park", generated: "24 buildings with park or 26 without; no helipad"},
+ // chunkData(cx,cz,starting) above creates the full deterministic chunk record.
+ cars:/*x,z,heading,yawGL(deg about +Y),bodyColor*/${J(CAR.map(c=>[c[0],c[1],c[2],YAW[c[2]],CC[c[3]][0]]))}};`;
+
+/* ---------- props ---------- */
+const kk=40,carSide=c=>R(-2.2,.3,4.4,.6,c[0])+R(-1.35,.9,2.3,.55,c[1])+R(-1.2,.98,1,.4,GL)+R(-.1,.98,.9,.4,GL)+R(2.1,.55,.1,.18,'#f6e27a')+R(-2.2,.55,.1,.18,'#c0392b')+Ci(-1.4,.32,.32,'#111')+Ci(1.4,.32,.32,'#111');
+const carFront=c=>R(-.9,.3,1.8,.6,c[0])+R(-.8,.9,1.6,.55,c[1])+R(-.7,.98,1.4,.4,GL)+R(-.8,.55,.3,.18,'#f6e27a')+R(.5,.55,.3,.18,'#f6e27a')+R(-.92,0,.22,.64,'#111')+R(.7,0,.22,.64,'#111');
+const treeSide=UP(100,240,kk,R(-.35,0,.7,2,'#6b4a2f')+Pg([[-1.8,1.6],[1.8,1.6],[0,4.2]],'#3f7d4a')+Pg([[-1.2,3.4],[1.2,3.4],[0,5.6]],'#4f9a5a'));
+const treeTop=`<g transform="translate(330 150) scale(${kk})">${Ci(0,0,1.8,'#3f7d4a')+Ci(0,0,1.2,'#4f9a5a')+Ci(0,0,.35,'#6b4a2f')}</g>`;
+const dl=(t,x,y,a='middle')=>TX(x,y,t,11,'#c9d3dd',a);
+const seg=`<g transform="scale(14)">${R(0,0,24,3,SW)+R(0,11,24,3,SW)+R(0,3,24,8,AS)+R(1,6.55,22,.3,YL)+R(1,7.15,22,.3,YL)+R(22.5,7,.5,4,WH)+R(1,3,.5,4,WH)+Pg([[10,8.5],[12.4,9],[10,9.5]],'#aab')+Pg([[13,4.5],[10.6,5],[13,5.5]],'#aab')+R(0,0,.06,14,'#ff4a1c')+R(23.94,0,.06,14,'#ff4a1c')}</g>`;
+const ix=`<g transform="scale(7)">${R(0,15,44,14,SW)+R(15,0,14,44,SW)+R(0,18,44,8,AS)+R(18,0,8,44,AS)+[[2,21.55,14,.3],[2,22.15,14,.3],[28,21.55,14,.3],[28,22.15,14,.3]].map(a=>R(a[0],a[1],a[2],a[3],YL)).join('')+[[21.55,2],[22.15,2],[21.55,28],[22.15,28]].map(a=>R(a[0],a[1],.3,14,YL)).join('')+R(16.5,22,.5,4,WH)+R(27,18,.5,4,WH)+R(18,16.5,4,.5,WH)+R(22,27,4,.5,WH)+R(18,18,8,8,'none','stroke="#ff4a1c" stroke-width=".15" stroke-dasharray=".6 .4"')}</g>`;
+const xs=`${R(0,60,60,30,SW)+R(60,80,160,10,AS)+R(220,60,60,30,SW)+R(137,76,3,4,YL)+R(0,89,280,1.5,'#6b7785')}${dl('sidewalk 3 m · top y 0.15',30,50)+dl('asphalt 8 m · top y 0.05 (2 lanes × 4)',140,108)+dl('marking quads y 0.07',140,64)+dl('ground y 0',250,106)}`;
+const tp=(c,r)=>`<g transform="translate(45 45) scale(14) rotate(${r})">${car(c)}</g>`;
+$('props').innerHTML=`
+<h2>Tree · 5.6 m</h2><div class="row"><div class="pn">${SV('0 0 420 260',420,260,treeSide+treeTop+dl('side',100,255)+dl('top',330,255)+dl('5.6 m',20,130,'start')+dl('trunk 2.0',150,230,'start')+dl('Ø3.6',330,215))}</div>
+<div class="card" style="max-width:520px"><ul><li>Trunk: 8-sided prism, Ø0.7, h 2.0, brown <code>#6b4a2f</code> (box 0.7×2.0×0.7 is acceptable).</li><li>Lower canopy: 8-sided cone, base Ø3.6, h 2.6, base at y 1.6, <code>#3f7d4a</code>.</li><li>Upper canopy: cone Ø2.4, h 2.2, base at y 3.4, <code>#4f9a5a</code>. Two cones, about 30 triangles total.</li><li>Placement: park trees on the lawn, ≥ 3.8 m from paths; street trees 6.0 m from a road centerline (canopy clears asphalt by 0.2 m), mid-block, 12 in total.</li></ul></div></div>
+<h2>Road</h2><div class="row"><div class="pn">${SV('0 0 480 200',480,200,seg+dl('segment 24 m shown, 14 m corridor',350,20,'start')+dl('3 m sidewalk',350,36,'start')+dl('lane 4 m (−X)',350,72,'start')+dl('double yellow 0.3+0.3+0.3',350,100,'start')+dl('lane 4 m (+X)',350,128,'start')+dl('red = segment edge, no markings cross it',350,176,'start'))}</div>
+<div class="pn">${SV('0 0 308 308',308,308,ix)}<div class="cap">four-way intersection: dashed 8×8 box has no center markings</div></div>
+<div class="pn">${SV('0 0 290 120',290,120,xs)}<div class="cap">cross-section, vertical ×10</div></div></div>
+<div class="card"><ul><li><b>Joins:</b> a segment runs between intersection boxes (edge at centerline ± 4). Segments and boxes share edges but never overlap, so there are no gaps and no doubled markings. Each segment owns its own center line (ending 2 m before each box, split consistently at chunk edges) and its stop lines (1.0–1.5 m before the box, approaching lane only). The intersection tile carries asphalt only.</li>
+<li><b>Sidewalk corners:</b> the corridor is 14 m wide, so each intersection leaves four 3×3 m corner pads, drawn as sidewalk.</li>
+<li><b>Flicker avoidance:</b> separate layers by height: ground 0, asphalt top 0.05, markings 0.07 (0.02 above asphalt), sidewalk top 0.15 (curb). Draw asphalt, then markings with depth writes off, or use <code>glPolygonOffset(-1,-1)</code> on markings. Keep the near plane ≥ 0.5 with a 24-bit depth buffer.</li>
+<li><b>Traffic:</b> right-hand. +X traffic uses the +Z half of an east–west road, −X the −Z half; +Z traffic uses the −X half of a north–south road, −Z the +X half.</li></ul></div>
+<h2>Car · 4.4 × 1.8 × 1.45 m</h2><div class="row"><div class="pn">${SV('0 0 200 84',200,84,UP(100,72,kk,carSide(CC[0])))}<div class="cap">side, front = +X (local)</div></div>
+<div class="pn">${SV('0 0 100 84',100,84,UP(50,72,kk,carFront(CC[0])))}<div class="cap">front, 1.8 wide</div></div>
+<div class="pn">${SV('0 0 200 90',200,90,`<g transform="translate(100 45) scale(${kk})">${car(CC[0])}</g>`)}<div class="cap">top, 4.4 × 1.8</div></div></div>
+<div class="card"><ul><li>Body box 4.4×1.8×0.6 (y 0.3–0.9). Cabin box 2.3×1.6×0.55 (y 0.9–1.45), shifted −0.2 along X toward the rear.</li><li>Glass: flat quads, 0.02 off the cabin faces. Side panes 1.0×0.4 and 0.9×0.4 around a pillar; windshield 1.4×0.4; rear pane likewise.</li><li>Wheels: 8-sided prisms r 0.32, width 0.22, at x ±1.4 (wheelbase 2.8), z ±0.81. Lights: 0.3×0.18 quads front, 0.1×0.18 rear.</li><li>Lane fit: 4 m lane − 1.8 m body = 1.1 m clearance each side. Cars are centered ±2 m from the centerline.</li></ul></div>
+<div class="flex"><div class="pn">${CC.map(c=>SV('0 0 70 30',70,30,`<g transform="translate(35 15) scale(12)">${car(c)}</g>`)).join('')}<div class="cap">body / cabin color variants</div></div>
+${[['+X',0],['-X',180],['+Z',90],['-Z',-90]].map(([h,r])=>`<div class="pn">${SV('0 0 90 90',90,90,tp(CC[1],r))}<div class="cap">face ${h} · GL yaw ${YAW[h]}°</div></div>`).join('')}</div>
+<p>Model faces local +X. Place with <code>glTranslatef(x,0,z); glRotatef(yaw,0,1,0)</code>: +X 0°, −X 180°, +Z 270°, −Z 90°. Cars are static props.</p>
+<h2>Reusable OpenGL geometry</h2><div class="card"><ul>
+<li><b>Unit meshes (VBOs, built once):</b> unit box (centered on all axes; translate building center to y = h/2), unit quad in the XY plane facing +Z, 8-gon prism, 8-gon cone, 24-gon disc. Everything is <code>glPushMatrix / Translate / Rotate / Scale / glColor3f / draw</code>.</li>
+<li><b>Building:</b> body = translate(x, h/2, z) × scale(w, h, d) on a centered unit box. Each facade detail = unit quad scaled to its fixed size, placed at (u, v) on the wall plane, pushed 0.02 along the face normal and yawed per side. Instance counts come from the formulas above, so details never stretch. Baking each building into one static VBO at load is a cheap upgrade.</li>
+<li><b>City:</b> sidewalk strips, asphalt strips, markings, lawn and paths are flat quads from the data tables; cars and trees are instances of one mesh each.</li></ul></div>`;
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button,section').forEach(x=>x.classList.remove('on'));b.classList.add('on');$(b.dataset.t).classList.add('on')});
+</script></html>

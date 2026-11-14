@@ -14,8 +14,8 @@ struct CustomizationSettings {
     {
         switch (size) {
         case HelicopterSize::Small: return 1.0f;
-        case HelicopterSize::Medium: return 1.5f;
-        case HelicopterSize::Large: return 2.0f;
+        case HelicopterSize::Medium: return 2.0f;
+        case HelicopterSize::Large: return 2.5f;
         }
         return 1.0f;
     }
