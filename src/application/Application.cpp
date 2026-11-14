@@ -208,11 +208,16 @@ void Application::update(float deltaTime) {
 
   const FlightInput flightInput = {forward, vertical, sideways, rudder};
 
-  // Apply customization speed multiplier.
-  const float speed = customization_.flightSpeedMultiplier();
-
-  const FlightTuning tuning = {12.0f * speed, 9.0f * speed,  0.8f,
-                               1.2f,          12.0f * speed, 6.0f * speed};
+  // Size changes acceleration only. Every size shares the faster top speed.
+  const float acceleration = customization_.flightAccelerationMultiplier();
+  constexpr float maxHorizontalSpeed = 42.0f;
+  constexpr float maxVerticalSpeed = 21.0f;
+  constexpr float baseRudderAcceleration = 120.0f;
+  constexpr float baseMaxRudderSpeed = 45.0f;
+  const FlightTuning tuning = {12.0f * acceleration, 9.0f * acceleration,
+                               0.8f, 1.2f, maxHorizontalSpeed, maxVerticalSpeed,
+                               baseRudderAcceleration * acceleration, 2.0f,
+                               baseMaxRudderSpeed * acceleration};
 
   // Fixed physics updates.
   constexpr double physicsStep = 1.0 / 120.0;

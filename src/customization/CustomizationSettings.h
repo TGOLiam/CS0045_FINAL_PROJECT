@@ -34,7 +34,8 @@ struct CustomizationSettings
         return 1.25f;
     }
 
-    float flightSpeedMultiplier() const
+    // Size affects how quickly the helicopter responds, not its top speed.
+    float flightAccelerationMultiplier() const
     {
         switch (size)
         {

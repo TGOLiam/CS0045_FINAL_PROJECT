@@ -26,8 +26,13 @@ void Physics::stepFlight(MotionState& state, FlightInput input, const FlightTuni
     const float worldX = input.x * cosine - input.z * sine;
     const float worldZ = input.x * sine + input.z * cosine;
     input.y = std::clamp(input.y, -1.0f, 1.0f);
-    const float horizontalDamping = std::exp(-tuning.horizontalDrag * deltaTime);
-    const float verticalDamping = std::exp(-tuning.verticalDrag * deltaTime);
+    // Input acceleration is deliberately not damped: each size can reach the
+    // shared speed cap, while its acceleration still controls time-to-cap.
+    // Drag only slows an axis once the player releases that axis's input.
+    const float horizontalDamping = inputLength > 0.0f
+        ? 1.0f : std::exp(-tuning.horizontalDrag * deltaTime);
+    const float verticalDamping = std::abs(input.y) > 0.0f
+        ? 1.0f : std::exp(-tuning.verticalDrag * deltaTime);
     state.velocity.x = (state.velocity.x + worldX * tuning.horizontalAcceleration * deltaTime) * horizontalDamping;
     state.velocity.z = (state.velocity.z + worldZ * tuning.horizontalAcceleration * deltaTime) * horizontalDamping;
     state.velocity.y = (state.velocity.y + input.y * tuning.verticalAcceleration * deltaTime) * verticalDamping;
