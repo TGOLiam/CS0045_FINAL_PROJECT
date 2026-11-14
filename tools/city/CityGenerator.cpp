@@ -497,6 +497,18 @@ std::vector<Aabb> makeCollisionBounds()
         box(x, 0.05f + 1.45f/2.0f, z, alongZ ? 1.84f : 4.4f,
             1.45f, alongZ ? 4.4f : 1.84f);
     });
+    // Street furniture gets small AABBs; shrubs stay visual so they remain
+    // passable foliage and pads are flat ground shading.
+    forEachDecor([&](const DecorItem& item, float ox, float oz) {
+        if (item.kind == DecorKind::Planter)
+            box(ox + item.x1, 0.45f, oz + item.z1, 2.0f, 0.95f, 1.2f);
+        else if (item.kind == DecorKind::Bin)
+            box(ox + item.x1, 0.5f, oz + item.z1, 0.75f, 1.0f, 0.75f);
+        else if (item.kind == DecorKind::Bench)
+            box(ox + (item.x1 + item.x2) / 2.0f, 0.275f,
+                oz + (item.z1 + item.z2) / 2.0f,
+                item.x2 - item.x1, 0.55f, item.z2 - item.z1);
+    });
     return boxes;
 }
 
@@ -760,6 +772,48 @@ void City::render(Renderer& renderer) const
                 else
                     drawSurface(renderer, x, z + offset, lineLength, bayWidth, 0.075f, bayLine);
             }
+        }
+    });
+
+    // Street furniture: shrubs reuse the 8-sided cylinder prism (a dark base
+    // and lighter crown, colors swapped for lightCrown), planters, benches
+    // and bins reuse the unit cube at their catalogue sizes.
+    const Color shrubDark = {63.0f/255.0f, 124.0f/255.0f, 73.0f/255.0f};
+    const Color shrubLight = {79.0f/255.0f, 153.0f/255.0f, 89.0f/255.0f};
+    const Color timber = {124.0f/255.0f, 82.0f/255.0f, 56.0f/255.0f};
+    const Color soil = {89.0f/255.0f, 111.0f/255.0f, 59.0f/255.0f};
+    const Color seatWood = {95.0f/255.0f, 74.0f/255.0f, 52.0f/255.0f};
+    const Color binNavy = {46.0f/255.0f, 61.0f/255.0f, 69.0f/255.0f};
+    const Color binLid = {61.0f/255.0f, 79.0f/255.0f, 92.0f/255.0f};
+    forEachDecor([&](const DecorItem& item, float ox, float oz) {
+        if (item.kind == DecorKind::Shrub) {
+            const auto crown = [&](float diameter, float height, float base,
+                                   Color color) {
+                const Matrix4 model = Matrix4::translation(ox + item.x1,
+                        base + height / 2.0f, oz + item.z1)
+                    * Matrix4::rotation(-90.0f, {1.0f, 0.0f, 0.0f})
+                    * Matrix4::scale(diameter, diameter, height);
+                renderer.draw(MeshId::Cylinder, model, color);
+            };
+            // Two stacked prisms fill the 0-0.8 m height range.
+            crown(1.4f, 0.4f, 0.0f, item.lightCrown ? shrubLight : shrubDark);
+            crown(0.95f, 0.4f, 0.4f, item.lightCrown ? shrubDark : shrubLight);
+        } else if (item.kind == DecorKind::Planter) {
+            drawBox(renderer, ox + item.x1, 0.4f, oz + item.z1,
+                    2.0f, 0.8f, 1.2f, timber);
+            drawBox(renderer, ox + item.x1, 0.85f, oz + item.z1,
+                    1.3f, 0.1f, 0.85f, soil);
+        } else if (item.kind == DecorKind::Bench) {
+            const float width = item.x2 - item.x1;
+            const float depth = item.z2 - item.z1;
+            drawBox(renderer, ox + (item.x1 + item.x2) / 2.0f, 0.275f,
+                    oz + (item.z1 + item.z2) / 2.0f,
+                    width, 0.55f, depth, seatWood);
+        } else if (item.kind == DecorKind::Bin) {
+            drawBox(renderer, ox + item.x1, 0.45f, oz + item.z1,
+                    0.7f, 0.9f, 0.7f, binNavy);
+            drawBox(renderer, ox + item.x1, 0.97f, oz + item.z1,
+                    0.72f, 0.06f, 0.72f, binLid);
         }
     });
 
