@@ -1,382 +1,293 @@
 #include "Application.h"
 #include "Menus.h"
-#include "HUD.h"
+#include "hud.h"
 
-#include <GL/glew.h>
 #include <GL/freeglut.h>
+#include <GL/glew.h>
 
 #include <algorithm>
 #include <chrono>
 #include <iostream>
 
-int Application::run(int argc, char** argv)
-{
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-    glutInitContextVersion(2, 1);
+int Application::run(int argc, char **argv) {
+  glutInit(&argc, argv);
+  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+  glutInitContextVersion(2, 1);
 
-    glutSetOption(
-        GLUT_ACTION_ON_WINDOW_CLOSE,
-        GLUT_ACTION_GLUTMAINLOOP_RETURNS
-    );
+  glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
 
-    windowId_ = glutCreateWindow("City Helicopter Simulator");
+  windowId_ = glutCreateWindow("City Helicopter Simulator");
 
-    if (windowId_ <= 0)
-    {
-        std::cerr << "Could not create the OpenGL window.\n";
-        return 1;
+  if (windowId_ <= 0) {
+    std::cerr << "Could not create the OpenGL window.\n";
+    return 1;
+  }
+
+  // Initialize GLEW.
+  const GLenum glewStatus = glewInit();
+
+  if (glewStatus != GLEW_OK) {
+    std::cerr << "Could not initialize GLEW: " << glewGetErrorString(glewStatus)
+              << '\n';
+
+    glutDestroyWindow(windowId_);
+    windowId_ = 0;
+    return 1;
+  }
+
+  // Initialize renderer.
+  if (!renderer_.initialize()) {
+    std::cerr << "Could not initialize renderer.\n";
+
+    glutDestroyWindow(windowId_);
+    windowId_ = 0;
+    return 1;
+  }
+
+  // Initialize city.
+  if (!city_.initialize(renderer_)) {
+    std::cerr << "Could not initialize city geometry.\n";
+
+    renderer_.shutdown();
+    glutDestroyWindow(windowId_);
+    windowId_ = 0;
+    return 1;
+  }
+
+  // Initialize audio.
+  if (!audio_.initialize()) {
+    std::cerr << "Warning: Audio initialization failed.\n";
+    std::cerr << "The simulator will continue without audio.\n";
+  }
+
+  // Calculate helicopter spawn height.
+  const Vec3 start = helicopter_.position();
+
+  float spawnSurface = city_.groundHeight();
+
+  for (const Aabb &box : city_.collisionBounds()) {
+    if (start.x >= box.min.x && start.x <= box.max.x && start.z >= box.min.z &&
+        start.z <= box.max.z) {
+      spawnSurface = std::max(spawnSurface, box.max.y);
     }
+  }
 
-    // Initialize GLEW.
-    const GLenum glewStatus = glewInit();
+  helicopter_.placeAbove(spawnSurface, customization_.scale());
 
-    if (glewStatus != GLEW_OK)
-    {
-        std::cerr << "Could not initialize GLEW: "
-                  << glewGetErrorString(glewStatus) << '\n';
+  // Connect application to FreeGLUT.
+  glutSetWindowData(this);
 
-        glutDestroyWindow(windowId_);
-        windowId_ = 0;
-        return 1;
-    }
+  glutDisplayFunc([]() {});
 
-    // Initialize renderer.
-    if (!renderer_.initialize())
-    {
-        std::cerr << "Could not initialize renderer.\n";
+  glutReshapeFunc([](int width, int height) {
+    auto *app = static_cast<Application *>(glutGetWindowData());
 
-        glutDestroyWindow(windowId_);
-        windowId_ = 0;
-        return 1;
-    }
+    if (!app)
+      return;
 
-    // Initialize city.
-    if (!city_.initialize(renderer_))
-    {
-        std::cerr << "Could not initialize city geometry.\n";
+    app->width_ = std::max(width, 1);
+    app->height_ = std::max(height, 1);
+  });
 
-        renderer_.shutdown();
-        glutDestroyWindow(windowId_);
-        windowId_ = 0;
-        return 1;
-    }
+  input_.initialize();
 
-    // Initialize audio.
-    if (!audio_.initialize())
-    {
-        std::cerr << "Warning: Audio initialization failed.\n";
-        std::cerr << "The simulator will continue without audio.\n";
-    }
+  // Handle window closing.
+  glutCloseFunc([]() {
+    auto *app = static_cast<Application *>(glutGetWindowData());
 
-    // Calculate helicopter spawn height.
-    const Vec3 start = helicopter_.position();
+    if (!app)
+      return;
 
-    float spawnSurface = city_.groundHeight();
+    app->audio_.stopHelicopterSound();
+    app->audio_.shutdown();
 
-    for (const Aabb& box : city_.collisionBounds())
-    {
-        if (start.x >= box.min.x && start.x <= box.max.x &&
-            start.z >= box.min.z && start.z <= box.max.z)
-        {
-            spawnSurface = std::max(spawnSurface, box.max.y);
-        }
-    }
+    app->renderer_.shutdown();
 
-    helicopter_.placeAbove(spawnSurface, customization_.scale());
+    app->windowId_ = 0;
+    app->quitRequested_ = true;
+  });
 
-    // Connect application to FreeGLUT.
-    glutSetWindowData(this);
+  glutFullScreen();
 
-    glutDisplayFunc([]() {});
+  auto previous = std::chrono::steady_clock::now();
 
-    glutReshapeFunc([](int width, int height)
-    {
-        auto* app = static_cast<Application*>(glutGetWindowData());
+  // Main application loop.
+  while (!quitRequested_) {
+    glutMainLoopEvent();
 
-        if (!app)
-            return;
+    if (quitRequested_)
+      break;
 
-        app->width_ = std::max(width, 1);
-        app->height_ = std::max(height, 1);
-    });
+    const auto now = std::chrono::steady_clock::now();
 
-    input_.initialize();
+    const float deltaTime =
+        std::min(std::chrono::duration<float>(now - previous).count(), 0.1f);
 
-    // Handle window closing.
-    glutCloseFunc([]()
-    {
-        auto* app = static_cast<Application*>(glutGetWindowData());
+    previous = now;
 
-        if (!app)
-            return;
+    update(deltaTime);
 
-        app->audio_.stopHelicopterSound();
-        app->audio_.shutdown();
+    if (quitRequested_)
+      break;
 
-        app->renderer_.shutdown();
+    render();
 
-        app->windowId_ = 0;
-        app->quitRequested_ = true;
-    });
+    glutSwapBuffers();
+  }
 
-    glutFullScreen();
+  // Final cleanup.
+  audio_.stopHelicopterSound();
+  audio_.shutdown();
 
-    auto previous = std::chrono::steady_clock::now();
+  input_.shutdown();
 
-    // Main application loop.
-    while (!quitRequested_)
-    {
-        glutMainLoopEvent();
+  if (windowId_ != 0) {
+    renderer_.shutdown();
 
-        if (quitRequested_)
-            break;
+    glutCloseFunc(nullptr);
+    glutDestroyWindow(windowId_);
 
-        const auto now = std::chrono::steady_clock::now();
+    windowId_ = 0;
+  }
 
-        const float deltaTime = std::min(
-            std::chrono::duration<float>(now - previous).count(),
-            0.1f
-        );
-
-        previous = now;
-
-        update(deltaTime);
-
-        if (quitRequested_)
-            break;
-
-        render();
-
-        glutSwapBuffers();
-    }
-
-    // Final cleanup.
-    audio_.stopHelicopterSound();
-    audio_.shutdown();
-
-    input_.shutdown();
-
-    if (windowId_ != 0)
-    {
-        renderer_.shutdown();
-
-        glutCloseFunc(nullptr);
-        glutDestroyWindow(windowId_);
-
-        windowId_ = 0;
-    }
-
-    return 0;
+  return 0;
 }
-
 
 // --------------------------------------------------
 // UPDATE
 // --------------------------------------------------
 
+void Application::update(float deltaTime) {
+  // MENU STATES
+  if (appState_ != AppState::Playing) {
+    HUD::reset();
 
-void Application::update(float deltaTime)
-{
-    // MENU STATES
-    if (appState_ != AppState::Playing)
-    {
-        // Process menu navigation and customization.
-        Menus::handleInput(
-            input_,
-            appState_,
-            width_,
-            height_,
-            quitRequested_,
-            customization_,
-            audio_
-        );
+    // Process menu navigation and customization.
+    Menus::handleInput(input_, appState_, width_, height_, quitRequested_,
+                       customization_, audio_);
 
-        // Manage audio depending on the current state.
-        if (appState_ == AppState::Playing)
-        {
-            audio_.startHelicopterSound();
-        }
-        else
-        {
-            audio_.stopHelicopterSound();
-        }
-
-        return;
+    // Manage audio depending on the current state.
+    if (appState_ == AppState::Playing) {
+      audio_.startHelicopterSound();
+    } else {
+      audio_.stopHelicopterSound();
     }
 
-    // GAMEPLAY STATE
+    return;
+  }
 
-    // Ensure helicopter sound is playing.
-    audio_.startHelicopterSound();
+  // GAMEPLAY STATE
 
-    // Update city traffic and pedestrians.
-    city_.update(deltaTime);
+  // Ensure helicopter sound is playing.
+  audio_.startHelicopterSound();
 
-    // Handle HUD button clicks.
-    if (HUD::handleInput(input_, width_, height_))
-    {
-        audio_.playUIClick();
-        audio_.stopHelicopterSound();
-        appState_ = AppState::MainMenu;
-        physicsAccumulator_ = 0.0;
-        return;
-    }
-    
-    // Read helicopter movement input.
-    const float forward =
-        static_cast<float>(input_.isKeyPressed('w')) -
-        static_cast<float>(input_.isKeyPressed('s'));
+  // Update city traffic and pedestrians.
+  city_.update(deltaTime);
 
-    const float sideways =
-        static_cast<float>(input_.isKeyPressed('d')) -
-        static_cast<float>(input_.isKeyPressed('a'));
+  // Handle HUD button clicks.
+  if (HUD::handleInput(input_, width_, height_)) {
+    audio_.playUIClick();
+    audio_.stopHelicopterSound();
+    appState_ = AppState::MainMenu;
+    physicsAccumulator_ = 0.0;
+    return;
+  }
 
-    const float vertical =
-        static_cast<float>(input_.isKeyPressed(' ')) -
-        static_cast<float>(input_.isControlPressed());
+  // Read helicopter movement input.
+  const float forward = static_cast<float>(input_.isKeyPressed('w')) -
+                        static_cast<float>(input_.isKeyPressed('s'));
 
-    const float rudder =
-        static_cast<float>(input_.isKeyPressed('e')) -
-        static_cast<float>(input_.isKeyPressed('q'));
+  const float sideways = static_cast<float>(input_.isKeyPressed('d')) -
+                         static_cast<float>(input_.isKeyPressed('a'));
 
-    const FlightInput flightInput = {
-        forward,
-        vertical,
-        sideways,
-        rudder
-    };
+  const float vertical = static_cast<float>(input_.isKeyPressed(' ')) -
+                         static_cast<float>(input_.isControlPressed());
 
-    // Apply customization speed multiplier.
-    const float speed = customization_.flightSpeedMultiplier();
+  const float rudder = static_cast<float>(input_.isKeyPressed('e')) -
+                       static_cast<float>(input_.isKeyPressed('q'));
 
-    const FlightTuning tuning = {
-        12.0f * speed,
-        9.0f * speed,
-        0.8f,
-        1.2f,
-        12.0f * speed,
-        6.0f * speed
-    };
+  const FlightInput flightInput = {forward, vertical, sideways, rudder};
 
-    // Fixed physics updates.
-    constexpr double physicsStep = 1.0 / 120.0;
+  // Apply customization speed multiplier.
+  const float speed = customization_.flightSpeedMultiplier();
 
-    physicsAccumulator_ += deltaTime;
+  const FlightTuning tuning = {12.0f * speed, 9.0f * speed,  0.8f,
+                               1.2f,          12.0f * speed, 6.0f * speed};
 
-    while (physicsAccumulator_ >= physicsStep)
-    {
-        helicopter_.update(
-            static_cast<float>(physicsStep),
-            flightInput,
-            tuning,
-            customization_.scale(),
-            city_.collisionBounds(),
-            city_.groundHeight()
-        );
+  // Fixed physics updates.
+  constexpr double physicsStep = 1.0 / 120.0;
 
-        physicsAccumulator_ -= physicsStep;
-    }
+  physicsAccumulator_ += deltaTime;
 
-    // Update camera target.
-    camera_.setTarget(helicopter_.position());
+  while (physicsAccumulator_ >= physicsStep) {
+    helicopter_.update(static_cast<float>(physicsStep), flightInput, tuning,
+                       customization_.scale(), city_.collisionBounds(),
+                       city_.groundHeight());
 
-    // ESC exits gameplay.
-    if (input_.isKeyPressed(27))
-    {
-        audio_.stopHelicopterSound();
-        quitRequested_ = true;
-        return;
-    }
+    physicsAccumulator_ -= physicsStep;
+  }
 
-    // Mouse camera controls.
-    int deltaX = 0;
-    int deltaY = 0;
+  HUD::update(helicopter_, city_.groundHeight(), deltaTime);
 
-    input_.consumeMouseDelta(deltaX, deltaY);
+  // Update camera target.
+  camera_.setTarget(helicopter_.position());
 
-    camera_.orbit(
-        -deltaX * 0.25f,
-        deltaY * 0.25f
-    );
+  // ESC exits gameplay.
+  if (input_.isKeyPressed(27)) {
+    audio_.stopHelicopterSound();
+    quitRequested_ = true;
+    return;
+  }
 
-    camera_.zoom(
-        -static_cast<float>(input_.consumeWheelDelta())
-    );
+  // Mouse camera controls.
+  int deltaX = 0;
+  int deltaY = 0;
 
-    camera_.updateObstruction(
-        deltaTime,
-        city_.collisionBounds(),
-        city_.groundHeight()
-    );
+  input_.consumeMouseDelta(deltaX, deltaY);
+
+  camera_.orbit(-deltaX * 0.25f, deltaY * 0.25f);
+
+  camera_.zoom(-static_cast<float>(input_.consumeWheelDelta()));
+
+  camera_.updateObstruction(deltaTime, city_.collisionBounds(),
+                            city_.groundHeight());
 }
-
-
 
 // --------------------------------------------------
 // RENDER
 // --------------------------------------------------
 
-void Application::render()
-{
-    const Vec3 helicopterPosition = helicopter_.position();
+void Application::render() {
+  const Vec3 helicopterPosition = helicopter_.position();
 
-    renderer_.beginFrame(
-        width_,
-        height_,
-        {0.035f, 0.055f, 0.085f, 1.0f}
-    );
+  renderer_.beginFrame(width_, height_, {0.035f, 0.055f, 0.085f, 1.0f});
 
-    if (appState_ == AppState::Playing)
-    {
-        // Gameplay rendering.
-        renderer_.begin3D(
-            camera_.viewMatrix(),
-            camera_.projectionMatrix(width_, height_)
-        );
+  if (appState_ == AppState::Playing) {
+    // Gameplay rendering.
+    renderer_.begin3D(camera_.viewMatrix(),
+                      camera_.projectionMatrix(width_, height_));
 
-        renderer_.drawSkybox(camera_.position());
+    renderer_.drawSkybox(camera_.position());
 
-        city_.render(renderer_);
+    city_.render(renderer_);
 
-        // Apply selected helicopter size.
-        const float helicopterScale = customization_.scale();
+    // Apply selected helicopter size.
+    const float helicopterScale = customization_.scale();
 
-        const Matrix4 helicopterTransform =
-            Matrix4::translation(
-                helicopterPosition.x,
-                helicopterPosition.y,
-                helicopterPosition.z
-            )
-            *
-            Matrix4::scale(
-                helicopterScale,
-                helicopterScale,
-                helicopterScale
-            );
+    const Matrix4 helicopterTransform =
+        Matrix4::translation(helicopterPosition.x, helicopterPosition.y,
+                             helicopterPosition.z) *
+        Matrix4::scale(helicopterScale, helicopterScale, helicopterScale);
 
-        // Render customized helicopter.
-        helicopter_.draw(
-            renderer_,
-            helicopterTransform,
-            customization_.bodyColor()
-        );
+    // Render customized helicopter.
+    helicopter_.draw(renderer_, helicopterTransform,
+                     customization_.bodyColor());
 
-
-        // Render in-game HUD.
-        HUD::render(renderer_, helicopter_, width_, height_, city_.groundHeight());
-    }
-    else
-    {
-        // Menu rendering.
-        Menus::render(
-            renderer_,
-            helicopter_,
-            appState_,
-            width_,
-            height_,
-            customization_,
-            audio_
-        );
-    }
+    // Render in-game HUD.
+    HUD::render(renderer_, helicopter_, width_, height_, city_.groundHeight());
+  } else {
+    // Menu rendering.
+    Menus::render(renderer_, helicopter_, appState_, width_, height_,
+                  customization_, audio_);
+  }
 }

@@ -38,6 +38,13 @@ different MSYS2 environments.
 The current application opens a full-screen window; press Escape to exit. Run
 `make clean` to remove generated build files.
 
+## Flight HUD
+
+Flight uses a pilot-style overlay implemented with the legacy fixed-function
+OpenGL path (C++17, FreeGLUT, GLEW, and OpenGL compatibility context). It
+shows a heading strip plus simple height and speed tapes. Displayed values are
+smoothed for readability only; this does not change helicopter movement.
+
 The city is loaded from `assets/city/city.mesh` and `city.collision`, so run the program from the
 project root. The asset contains the current fixed 3 × 3 city geometry and solid
 colors, including its roads, buildings, parks and helipad. Its binary format is:
