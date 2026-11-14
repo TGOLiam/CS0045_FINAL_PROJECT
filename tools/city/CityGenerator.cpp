@@ -507,7 +507,7 @@ std::vector<Aabb> makeCollisionBounds()
         else if (item.kind == DecorKind::Bench)
             box(ox + (item.x1 + item.x2) / 2.0f, 0.275f,
                 oz + (item.z1 + item.z2) / 2.0f,
-                item.x2 - item.x1, 0.55f, item.z2 - item.z1);
+                std::abs(item.x2 - item.x1), 0.55f, std::abs(item.z2 - item.z1));
     });
     return boxes;
 }
@@ -742,11 +742,10 @@ void City::render(Renderer& renderer) const
         if (item.kind == DecorKind::Shrub || item.kind == DecorKind::Planter ||
             item.kind == DecorKind::Bench || item.kind == DecorKind::Bin)
             return; // Furniture is drawn in the next pass.
-        const bool horizontal = item.x2 >= item.z2;
         const float x = ox + (item.x1 + item.x2) / 2.0f;
         const float z = oz + (item.z1 + item.z2) / 2.0f;
-        const float w = horizontal ? item.x2 - item.x1 : item.z2 - item.z1;
-        const float d = horizontal ? item.z2 - item.z1 : item.x2 - item.x1;
+        const float w = std::abs(item.x2 - item.x1);
+        const float d = std::abs(item.z2 - item.z1);
         float y = 0.16f;
         Color surface = walkway;
         switch (item.kind) {
@@ -804,8 +803,8 @@ void City::render(Renderer& renderer) const
             drawBox(renderer, ox + item.x1, 0.85f, oz + item.z1,
                     1.3f, 0.1f, 0.85f, soil);
         } else if (item.kind == DecorKind::Bench) {
-            const float width = item.x2 - item.x1;
-            const float depth = item.z2 - item.z1;
+            const float width = std::abs(item.x2 - item.x1);
+            const float depth = std::abs(item.z2 - item.z1);
             drawBox(renderer, ox + (item.x1 + item.x2) / 2.0f, 0.275f,
                     oz + (item.z1 + item.z2) / 2.0f,
                     width, 0.55f, depth, seatWood);
