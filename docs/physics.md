@@ -1,7 +1,7 @@
 # Planned flight physics
 
-Status: acceleration-based flight integration is implemented; collision response
-and camera obstruction handling are not implemented yet.
+Status: acceleration-based flight and helicopter collision response are
+implemented. Camera obstruction handling is not implemented yet.
 
 Altitude control replaces the original fixed-altitude flight requirement. A new
 Physics subsystem will support simple acceleration-based flight with momentum
@@ -37,9 +37,11 @@ using delta time before rendering; rendering must not advance the simulation.
 Helicopter owns a `MotionState` containing position and velocity. The Physics
 foundation defines axis-aligned bounds, an overlap query, and a scale-aware
 helicopter box. City exposes static building and rooftop boxes plus ground
-height from its generated collision asset. Swept collision and camera obstruction are future work. The
-conservative box includes rotor sweep and tilt; before collision response is
-enabled, the rooftop spawn must be raised to avoid overlapping the roof.
+height from its generated collision asset. Helicopter movement sweeps its box
+against those bounds and ground, then slides along contact surfaces. The
+conservative box includes rotor sweep and tilt; the rooftop spawn is raised to
+keep it clear, so the visible skids hover above the roof. Camera obstruction
+is future work. Existing overlaps are not automatically resolved.
 Avoid duplicate authoritative copies of position or velocity.
 
 ## Decisions still pending
@@ -50,8 +52,8 @@ Avoid duplicate authoritative copies of position or velocity.
 - Building collisions are planned using the exported city bounds.
 - Physics file layout and integration details.
 
-Flight currently uses 120 Hz fixed simulation steps. Existing city collision
-bounds are loaded but do not yet restrict movement.
+Flight currently uses 120 Hz fixed simulation steps. Ground is an infinite
+horizontal collision plane; buildings use exported bounding boxes.
 
 Size-based speed tuning uses Medium as the reference: Small is 1.5× Medium,
 Medium is 2× the original flight tuning, and Large is 0.5× Medium. Both the

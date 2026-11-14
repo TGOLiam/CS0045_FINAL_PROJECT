@@ -43,6 +43,17 @@ int Application::run(int argc, char** argv)
         return 1;
     }
 
+    // Start above the highest surface directly beneath the initial position.
+    const Vec3 start = helicopter_.position();
+    float spawnSurface = city_.groundHeight();
+    for (const Aabb& box : city_.collisionBounds()) {
+        if (start.x >= box.min.x && start.x <= box.max.x &&
+            start.z >= box.min.z && start.z <= box.max.z) {
+            spawnSurface = std::max(spawnSurface, box.max.y);
+        }
+    }
+    helicopter_.placeAbove(spawnSurface, customization_.scale());
+
     glutSetWindowData(this);
     // FreeGLUT requires a display callback; the application loop draws frames.
     glutDisplayFunc([]() {});
@@ -106,7 +117,8 @@ void Application::update(float deltaTime)
     constexpr double physicsStep = 1.0 / 120.0;
     physicsAccumulator_ += deltaTime;
     while (physicsAccumulator_ >= physicsStep) {
-        helicopter_.update(static_cast<float>(physicsStep), flightInput, tuning);
+        helicopter_.update(static_cast<float>(physicsStep), flightInput, tuning,
+                           customization_.scale(), city_.collisionBounds(), city_.groundHeight());
         physicsAccumulator_ -= physicsStep;
     }
     camera_.setTarget(helicopter_.position());

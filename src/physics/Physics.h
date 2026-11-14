@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../math/Matrix4.h"
+#include <vector>
 
 // Helicopter owns this state; Physics operates on it without keeping a copy.
 struct MotionState {
@@ -54,4 +55,10 @@ Aabb placeBounds(const Aabb& local, Vec3 origin, float scale);
 
 // Rotate local horizontal input by heading, then integrate world-space velocity.
 void stepFlight(MotionState& state, FlightInput input, const FlightTuning& tuning, float deltaTime);
+
+// Move a world-aligned box through static obstacles, removing velocity into
+// contact surfaces while preserving tangential motion.
+void moveAndSlide(MotionState& state, const Aabb& localBounds, float scale,
+                  const std::vector<Aabb>& obstacles, float groundHeight,
+                  Vec3 displacement);
 }

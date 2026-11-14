@@ -1,6 +1,7 @@
 #include "Physics.h"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 bool Physics::overlaps(const Aabb& a, const Aabb& b)
 {
@@ -55,4 +56,75 @@ Aabb Physics::placeBounds(const Aabb& local, Vec3 origin, float scale)
         {origin.x + local.min.x * scale, origin.y + local.min.y * scale, origin.z + local.min.z * scale},
         {origin.x + local.max.x * scale, origin.y + local.max.y * scale, origin.z + local.max.z * scale}
     };
+}
+
+namespace {
+SweepResult sweepBox(const Aabb& moving, Vec3 displacement, const Aabb& obstacle)
+{
+    const float low[] = {moving.min.x, moving.min.y, moving.min.z};
+    const float high[] = {moving.max.x, moving.max.y, moving.max.z};
+    const float otherLow[] = {obstacle.min.x, obstacle.min.y, obstacle.min.z};
+    const float otherHigh[] = {obstacle.max.x, obstacle.max.y, obstacle.max.z};
+    const float motion[] = {displacement.x, displacement.y, displacement.z};
+    float entry = -std::numeric_limits<float>::infinity();
+    float exit = std::numeric_limits<float>::infinity();
+    int hitAxis = -1;
+    for (int axis = 0; axis < 3; ++axis) {
+        if (std::abs(motion[axis]) < 1e-8f) {
+            // A box resting against a surface can still slide along it.
+            if (high[axis] <= otherLow[axis] || low[axis] >= otherHigh[axis]) return {};
+            continue;
+        }
+        float first = (otherLow[axis] - high[axis]) / motion[axis];
+        float last = (otherHigh[axis] - low[axis]) / motion[axis];
+        if (first > last) std::swap(first, last);
+        if (first > entry) { entry = first; hitAxis = axis; }
+        exit = std::min(exit, last);
+    }
+    if (hitAxis < 0 || entry > exit || entry < 0.0f || entry > 1.0f || exit <= 0.0f) return {};
+    SweepResult result;
+    result.hit = true;
+    result.fraction = entry;
+    const float normal = motion[hitAxis] > 0 ? -1.0f : 1.0f;
+    if (hitAxis == 0) result.normal.x = normal;
+    if (hitAxis == 1) result.normal.y = normal;
+    if (hitAxis == 2) result.normal.z = normal;
+    return result;
+}
+}
+
+void Physics::moveAndSlide(MotionState& state, const Aabb& localBounds, float scale,
+                           const std::vector<Aabb>& obstacles, float groundHeight,
+                           Vec3 displacement)
+{
+    constexpr float clearance = 0.001f;
+    for (int iteration = 0; iteration < 4; ++iteration) {
+        const Aabb moving = placeBounds(localBounds, state.position, scale);
+        SweepResult nearest;
+        for (const Aabb& obstacle : obstacles) {
+            const SweepResult candidate = sweepBox(moving, displacement, obstacle);
+            if (candidate.hit && (!nearest.hit || candidate.fraction < nearest.fraction)) nearest = candidate;
+        }
+        if (displacement.y < 0.0f && moving.min.y >= groundHeight) {
+            const float fraction = (groundHeight - moving.min.y) / displacement.y;
+            if (fraction >= 0.0f && fraction <= 1.0f && (!nearest.hit || fraction < nearest.fraction)) {
+                nearest = {true, fraction, {0.0f, 1.0f, 0.0f}};
+            }
+        }
+        const float fraction = nearest.hit ? nearest.fraction : 1.0f;
+        state.position.x += displacement.x * fraction;
+        state.position.y += displacement.y * fraction;
+        state.position.z += displacement.z * fraction;
+        if (!nearest.hit) break;
+        state.position.x += nearest.normal.x * clearance;
+        state.position.y += nearest.normal.y * clearance;
+        state.position.z += nearest.normal.z * clearance;
+        const float remaining = 1.0f - fraction;
+        displacement.x *= remaining;
+        displacement.y *= remaining;
+        displacement.z *= remaining;
+        if (nearest.normal.x != 0.0f) { displacement.x = 0.0f; state.velocity.x = 0.0f; }
+        if (nearest.normal.y != 0.0f) { displacement.y = 0.0f; state.velocity.y = 0.0f; }
+        if (nearest.normal.z != 0.0f) { displacement.z = 0.0f; state.velocity.z = 0.0f; }
+    }
 }

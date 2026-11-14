@@ -1,15 +1,26 @@
 #include "Helicopter.h"
 #include <cmath>
 
-Aabb Helicopter::collisionBounds(float scale) const
+Aabb Helicopter::localCollisionBounds()
 {
     // Bounds surround the model and rotor sweep, including combined tilt.
     // The box remains aligned to world axes as the model leans.
-    const Aabb local = {{-3.1f, -1.8f, -3.1f}, {3.1f, 1.8f, 3.1f}};
-    return Physics::placeBounds(local, motion_.position, scale);
+    return {{-3.1f, -1.8f, -3.1f}, {3.1f, 1.8f, 3.1f}};
 }
 
-void Helicopter::update(float deltaTime, FlightInput input, const FlightTuning& tuning)
+Aabb Helicopter::collisionBounds(float scale) const
+{
+    return Physics::placeBounds(localCollisionBounds(), motion_.position, scale);
+}
+
+void Helicopter::placeAbove(float surfaceHeight, float scale)
+{
+    motion_.position.y = surfaceHeight - localCollisionBounds().min.y * scale + 0.01f;
+    motion_.velocity = {0.0f, 0.0f, 0.0f};
+}
+
+void Helicopter::update(float deltaTime, FlightInput input, const FlightTuning& tuning,
+                        float scale, const std::vector<Aabb>& obstacles, float groundHeight)
 {
     // Fixed rotor speeds: RPM converted to degrees per second.
     constexpr float mainRotorRpm = 180.0f;
@@ -25,7 +36,13 @@ void Helicopter::update(float deltaTime, FlightInput input, const FlightTuning& 
         sideways /= length;
     }
     // Acceleration and drag allow momentum to persist after input is released.
+    const Vec3 previous = motion_.position;
     Physics::stepFlight(motion_, input, tuning, deltaTime);
+    const Vec3 displacement = {motion_.position.x - previous.x,
+                               motion_.position.y - previous.y,
+                               motion_.position.z - previous.z};
+    motion_.position = previous;
+    Physics::moveAndSlide(motion_, localCollisionBounds(), scale, obstacles, groundHeight, displacement);
     // Gradually lean in the movement direction and return to level at rest.
     const float blend = 1.0f - std::exp(-6.0f * deltaTime);
     forwardTilt_ += (-forward * 16.0f - forwardTilt_) * blend;

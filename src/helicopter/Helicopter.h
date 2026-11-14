@@ -6,13 +6,16 @@
 class Helicopter
 {
 public:
-    void update(float deltaTime, FlightInput input, const FlightTuning& tuning);
+    void update(float deltaTime, FlightInput input, const FlightTuning& tuning,
+                float scale, const std::vector<Aabb>& obstacles, float groundHeight);
+    void placeAbove(float surfaceHeight, float scale);
     void draw(const Renderer& renderer, const Matrix4& worldTransform) const;
     Vec3 position() const { return motion_.position; }
     // Conservative box includes the spinning rotors and the 16-degree visual tilt.
     Aabb collisionBounds(float scale) const;
 
 private:
+    static Aabb localCollisionBounds();
     float mainRotorDegrees_ = 0.0f;
     float tailRotorDegrees_ = 0.0f;
     // The model's nose points along +X; altitude control will use motion_.
