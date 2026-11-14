@@ -1,7 +1,7 @@
 # Planned flight physics
 
 Status: acceleration-based flight and helicopter collision response are
-implemented. Camera obstruction handling is not implemented yet.
+implemented. Camera obstruction handling uses the same city bounds.
 
 Altitude control replaces the original fixed-altitude flight requirement. A new
 Physics subsystem will support simple acceleration-based flight with momentum
@@ -41,8 +41,10 @@ height from its generated collision asset. Helicopter movement sweeps its box
 against those bounds and ground, then slides along contact surfaces. The
 box is 75% of the conservative rotor-and-tilt envelope, so blade tips or tilted
 parts can extend beyond it. The rooftop spawn is raised to keep it clear, so
-the visible skids may hover above the roof. Camera obstruction is future work.
-Existing overlaps are not automatically resolved.
+the visible skids may hover above the roof. The camera sweeps a
+small box from its target toward the desired position, moves inward immediately
+when blocked, and returns smoothly when clear. Existing overlaps are not
+automatically resolved.
 Avoid duplicate authoritative copies of position or velocity.
 
 ## Decisions still pending

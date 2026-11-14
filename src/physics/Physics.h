@@ -50,6 +50,10 @@ namespace Physics {
 // Touching faces count as contact; bounds must have min <= max on each axis.
 bool overlaps(const Aabb& a, const Aabb& b);
 
+// First contact along a displacement, ignoring surfaces merely touched while
+// moving away or sliding parallel to them. Initial overlaps are not resolved.
+SweepResult sweepAabb(const Aabb& moving, Vec3 displacement, const Aabb& obstacle);
+
 // Place local bounds at an origin using a positive, uniform model scale.
 Aabb placeBounds(const Aabb& local, Vec3 origin, float scale);
 

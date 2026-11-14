@@ -128,6 +128,7 @@ void Application::update(float deltaTime)
     input_.consumeMouseDelta(deltaX, deltaY);
     camera_.orbit(-deltaX * 0.25f, deltaY * 0.25f);
     camera_.zoom(-static_cast<float>(input_.consumeWheelDelta()));
+    camera_.updateObstruction(deltaTime, city_.collisionBounds(), city_.groundHeight());
 }
 
 void Application::render()

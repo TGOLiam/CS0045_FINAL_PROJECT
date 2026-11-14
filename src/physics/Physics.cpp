@@ -58,8 +58,7 @@ Aabb Physics::placeBounds(const Aabb& local, Vec3 origin, float scale)
     };
 }
 
-namespace {
-SweepResult sweepBox(const Aabb& moving, Vec3 displacement, const Aabb& obstacle)
+SweepResult Physics::sweepAabb(const Aabb& moving, Vec3 displacement, const Aabb& obstacle)
 {
     const float low[] = {moving.min.x, moving.min.y, moving.min.z};
     const float high[] = {moving.max.x, moving.max.y, moving.max.z};
@@ -91,7 +90,6 @@ SweepResult sweepBox(const Aabb& moving, Vec3 displacement, const Aabb& obstacle
     if (hitAxis == 2) result.normal.z = normal;
     return result;
 }
-}
 
 void Physics::moveAndSlide(MotionState& state, const Aabb& localBounds, float scale,
                            const std::vector<Aabb>& obstacles, float groundHeight,
@@ -102,7 +100,7 @@ void Physics::moveAndSlide(MotionState& state, const Aabb& localBounds, float sc
         const Aabb moving = placeBounds(localBounds, state.position, scale);
         SweepResult nearest;
         for (const Aabb& obstacle : obstacles) {
-            const SweepResult candidate = sweepBox(moving, displacement, obstacle);
+            const SweepResult candidate = sweepAabb(moving, displacement, obstacle);
             if (candidate.hit && (!nearest.hit || candidate.fraction < nearest.fraction)) nearest = candidate;
         }
         if (displacement.y < 0.0f && moving.min.y >= groundHeight) {
