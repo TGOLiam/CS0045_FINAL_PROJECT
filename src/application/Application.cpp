@@ -179,11 +179,7 @@ void Application::update(float deltaTime)
     // MENU STATES
     if (appState_ != AppState::Playing)
     {
-        // Play UI sound when a menu click is detected.
-        if (input_.isLeftMouseClicked())
-        {
-            audio_.playUIClick();
-        }
+        
 
         // Process menu navigation and customization.
         Menus::handleInput(

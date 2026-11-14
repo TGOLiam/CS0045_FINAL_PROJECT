@@ -162,6 +162,11 @@ bool Input::isLeftMouseClicked() const
     return leftMouseClicked;
 }
 
+bool Input::isLeftMouseDown() const
+{
+    return leftMouseDown;
+}
+
 void Input::consumeLeftMouseClick()
 {
     leftMouseClicked = false;

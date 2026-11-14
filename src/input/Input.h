@@ -45,6 +45,8 @@ public:
     bool isControlPressed() const;
 
     bool isLeftMouseClicked() const;
+    bool isLeftMouseDown() const;
+    
     void consumeLeftMouseClick();
     void getMousePosition(int& x, int& y) const;
 

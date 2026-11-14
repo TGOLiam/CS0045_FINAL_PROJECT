@@ -798,7 +798,52 @@ void Menus::handleInput(
 
     input.getMousePosition(mouseX, mouseY);
 
-    input.consumeLeftMouseClick();
+    // --------------------------------------------------
+    // SOUND SLIDER DRAGGING
+    // --------------------------------------------------
+
+    if (state == AppState::SoundSettings && input.isLeftMouseDown())
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            Button slider = volumeSlider(i, width, height);
+
+            // Check whether the cursor is within the slider's
+            // vertical area. Horizontal movement is unrestricted.
+            if (mouseY >= slider.y - 12 &&
+                mouseY <= slider.y + slider.height + 12)
+            {
+                float volume = getSliderValue(mouseX, slider);
+
+                if (i == 0)
+                    audio.setMasterVolume(volume);
+                else if (i == 1)
+                    audio.setUIVolume(volume);
+
+                else if (i == 2)
+                    audio.setHelicopterVolume(volume);
+
+                return;
+            }
+        }
+    }
+
+// --------------------------------------------------
+// NORMAL MENU CLICK INPUT
+// --------------------------------------------------
+
+// --------------------------------------------------
+// NORMAL MENU CLICK INPUT
+// --------------------------------------------------
+
+if (!input.isLeftMouseClicked())
+    return;
+
+// Play UI sound for menu buttons only.
+// Slider interactions return earlier and remain silent.
+audio.playUIClick();
+
+input.consumeLeftMouseClick();
 
     // --------------------------------------------------
     // MAIN MENU INPUT
