@@ -10,7 +10,8 @@ class Renderer;
 
 class City {
 public:
-    bool initialize(Renderer& renderer);
+    bool initialize(Renderer& renderer,
+                    const ActorConfig& actorConfig = ActorConfig{});
     void update(float deltaTime);
     void render(Renderer& renderer) const;
     const std::vector<Aabb>& collisionBounds() const { return collisionBounds_; }

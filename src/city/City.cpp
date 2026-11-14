@@ -26,7 +26,7 @@ bool validColor(Color color)
 }
 }
 
-bool City::initialize(Renderer& renderer)
+bool City::initialize(Renderer& renderer, const ActorConfig& actorConfig)
 {
     // Version 1 stores little-endian 32-bit integers and IEEE-754 floats.
     static_assert(sizeof(float) == 4 && std::numeric_limits<float>::is_iec559,
@@ -139,7 +139,7 @@ bool City::initialize(Renderer& renderer)
     batches_ = std::move(loaded);
     collisionBounds_ = std::move(boxes);
     groundHeight_ = ground;
-    actors_.initialize();
+    actors_.initialize(actorConfig);
     return true;
 }
 

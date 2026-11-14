@@ -6,14 +6,22 @@
 #include <random>
 #include <vector>
 
+// Density knobs for the dynamic city actors. Defaults keep the reference
+// car placements plus a lively sidewalk population; both counts clamp to
+// sensible ranges and extra cars beyond the 12 reference starts are placed
+// deterministically from the actor RNG.
+struct ActorConfig {
+    int carsPerChunk = 12;       // reference starts covered below 12 reads
+    int walkersPerBlock = 6;     // per block sidewalk ring, all 9 blocks
+};
+
 // Dynamic road and sidewalk actors: cars wander the lane graph, pedestrians
 // walk their block sidewalk rings. Movement is simulation work; rendering
 // happens once per frame through the shared unit primitives.
 class CityActors {
 public:
-    // Fixed, deterministic actor set: the reference cars plus three walkers
-    // on every block ring.
-    void initialize();
+    // Fixed, deterministic actor set built from the density config.
+    void initialize(const ActorConfig& config = ActorConfig{});
 
     void update(float deltaTime);
 
@@ -40,8 +48,11 @@ private:
     void wanderCar(Car& car, float step);
     void walkPedestrian(Pedestrian& ped, float step);
     void decideCarHeading(Car& car);
+    void spawnCars(int chunkX, int chunkZ, int count);
     void spawnPedestrians(int chunkX, int chunkZ);
 
+    int carsPerChunk_ = 0;
+    int walkersPerBlock_ = 0;
     std::vector<Car> cars_;
     std::vector<Pedestrian> pedestrians_;
     std::mt19937 rng_;

@@ -63,57 +63,80 @@ float ringYaw(float s)
 }
 }
 
-void CityActors::initialize()
+void CityActors::initialize(const ActorConfig& config)
 {
     rng_.seed(20261114u);
     cars_.clear();
     pedestrians_.clear();
+    carsPerChunk_ = config.carsPerChunk < 0 ? 0 : config.carsPerChunk;
+    walkersPerBlock_ = config.walkersPerBlock < 0 ? 0 : config.walkersPerBlock;
 
-    // Starting lane positions from the reference; the seeded wander takes
-    // over from there.
+    for (int chunkZ = -1; chunkZ <= 1; ++chunkZ) {
+        for (int chunkX = -1; chunkX <= 1; ++chunkX) {
+            spawnCars(chunkX, chunkZ, carsPerChunk_);
+            spawnPedestrians(chunkX, chunkZ);
+        }
+    }
+}
+
+void CityActors::spawnCars(int chunkX, int chunkZ, int count)
+{
+    // The first twelve match the reference street placements; any beyond
+    // are dropped onto a random lane heading from the seeded state.
     struct CarStart { float x; float z; int heading; };
     const CarStart starts[] = {
         {-90, -58, 0}, {40, -62, 1}, {-150, 62, 0}, {100, 58, 1},
         {-62, -100, 2}, {-58, 100, 3}, {58, 30, 2}, {62, -30, 3},
         {-30, 62, 0}, {130, 58, 1}, {178, -100, 2}, {-178, 40, 3}
     };
-    for (int chunkZ = -1; chunkZ <= 1; ++chunkZ) {
-        for (int chunkX = -1; chunkX <= 1; ++chunkX) {
-            const float offsetX = chunkX * 360.0f;
-            const float offsetZ = chunkZ * 360.0f;
-            int slot = 0;
-            for (const CarStart& start : starts) {
-                Car car{};
-                car.x = offsetX + start.x;
-                car.z = offsetZ + start.z;
-                car.heading = start.heading;
-                car.speed = 8.0f;
-                car.color = slot;
-                car.nextNode = firstNodeAhead(
-                    headingAlongX[car.heading] ? car.x : car.z, car.heading);
-                cars_.push_back(car);
-                ++slot;
+    const float offsetX = chunkX * 360.0f;
+    const float offsetZ = chunkZ * 360.0f;
+    for (int slot = 0; slot < count; ++slot) {
+        Car car{};
+        car.speed = 8.0f;
+        car.color = slot % 6;
+        if (slot < 12) {
+            car.x = offsetX + starts[slot].x;
+            car.z = offsetZ + starts[slot].z;
+            car.heading = starts[slot].heading;
+        } else {
+            std::uniform_int_distribution<int> headingPick(0, 3);
+            car.heading = headingPick(rng_);
+            std::uniform_int_distribution<int> linePick(0, 9);
+            const float center = -halfSize + static_cast<float>(linePick(rng_)) * spacing;
+            std::uniform_real_distribution<float> alongPick(-halfSize, halfSize);
+            if (headingAlongX[car.heading]) {
+                car.z = center + (car.heading == 0 ? laneOffset : -laneOffset);
+                // Along-axis coordinate is world-space; it already covers
+                // every chunk, so no chunk offset applies here.
+                car.x = alongPick(rng_);
+            } else {
+                car.x = center - (car.heading == 2 ? laneOffset : -laneOffset);
+                car.z = alongPick(rng_);
             }
-            spawnPedestrians(chunkX, chunkZ);
         }
+        car.nextNode = firstNodeAhead(
+            headingAlongX[car.heading] ? car.x : car.z, car.heading);
+        cars_.push_back(car);
     }
 }
 
 void CityActors::spawnPedestrians(int chunkX, int chunkZ)
 {
-    // Three walkers on the ring of every block, center block included (its
-    // ring clears the helipad tower). Slots cover the full ring so traffic
-    // reads as steady flow; directions and colours alternate.
+    // walkersPerBlock walkers on the ring of every block, center block
+    // included. Slots spread around the full ring; directions and colours
+    // alternate so the flow never reads as a conga line.
     const float offsetX = chunkX * 360.0f;
     const float offsetZ = chunkZ * 360.0f;
     int blockIndex = 0;
     for (float blockZ : {-120.0f, 0.0f, 120.0f}) {
         for (float blockX : {-120.0f, 0.0f, 120.0f}) {
-            for (int slot = 0; slot < 3; ++slot) {
+            if (walkersPerBlock_ <= 0) continue;
+            for (int slot = 0; slot < walkersPerBlock_; ++slot) {
                 Pedestrian ped{};
                 ped.centerX = offsetX + blockX;
                 ped.centerZ = offsetZ + blockZ;
-                ped.s = sideLength * (0.125f + 0.333f * slot)
+                ped.s = sideLength * (slot + 0.5f) / walkersPerBlock_
                       + 13.0f * static_cast<float>(blockIndex % 4);
                 ped.direction = slot % 2 == 0 ? 1 : -1;
                 ped.color = (blockIndex + slot) % 6;
