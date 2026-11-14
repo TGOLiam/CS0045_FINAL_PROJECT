@@ -11,7 +11,7 @@
 // sensible ranges and extra cars beyond the 12 reference starts are placed
 // deterministically from the actor RNG.
 struct ActorConfig {
-    int carsPerChunk = 12;       // reference starts covered below 12 reads
+    int carsPerChunk = 28;       // ~2.3x the 12 reference starts; extras are seeded
     int walkersPerBlock = 12;    // per block sidewalk ring, all 9 blocks
 };
 
