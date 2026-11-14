@@ -24,14 +24,16 @@ constexpr float ringPerimeter = 4.0f * sideLength;
 
 float snapToNode(float coordinate)
 {
-    return std::round(coordinate / spacing) * spacing;
+    // Centerlines sit 60 m off the multiples of 120 (roads at -540, -420,
+    // ..., 540), so snapping must preserve that offset.
+    return std::round((coordinate - 60.0f) / spacing) * spacing + 60.0f;
 }
 
 float firstNodeAhead(float position, int heading)
 {
     return headingSign[heading] > 0
-        ? std::ceil(position / spacing) * spacing
-        : std::floor(position / spacing) * spacing;
+        ? std::ceil((position - 60.0f) / spacing) * spacing + 60.0f
+        : std::floor((position - 60.0f) / spacing) * spacing + 60.0f;
 }
 
 Vec3 ringPoint(float centerX, float centerZ, float s)
