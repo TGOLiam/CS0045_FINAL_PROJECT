@@ -1,6 +1,14 @@
 #include "Helicopter.h"
 #include <cmath>
 
+Aabb Helicopter::collisionBounds(float scale) const
+{
+    // Bounds surround the model and rotor sweep, including combined tilt.
+    // The box remains aligned to world axes as the model leans.
+    const Aabb local = {{-2.6f, -1.8f, -1.6f}, {2.1f, 1.8f, 1.6f}};
+    return Physics::placeBounds(local, motion_.position, scale);
+}
+
 void Helicopter::update(float deltaTime, float forward, float sideways)
 {
     // Fixed rotor speeds: RPM converted to degrees per second.
@@ -14,8 +22,8 @@ void Helicopter::update(float deltaTime, float forward, float sideways)
         forward /= length;
         sideways /= length;
     }
-    position_.x += forward * 3.0f * deltaTime;
-    position_.z += sideways * 3.0f * deltaTime;
+    motion_.position.x += forward * 3.0f * deltaTime;
+    motion_.position.z += sideways * 3.0f * deltaTime;
     // Gradually lean in the movement direction and return to level at rest.
     const float blend = 1.0f - std::exp(-6.0f * deltaTime);
     forwardTilt_ += (-forward * 16.0f - forwardTilt_) * blend;

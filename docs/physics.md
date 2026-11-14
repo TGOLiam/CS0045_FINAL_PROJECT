@@ -1,6 +1,7 @@
 # Planned flight physics
 
-Status: agreed direction for upcoming work; not implemented yet.
+Status: foundation started. Motion integration and collision response are not
+implemented yet.
 
 Altitude control replaces the original fixed-altitude flight requirement. A new
 Physics subsystem will support simple acceleration-based flight with momentum
@@ -31,16 +32,19 @@ using delta time before rendering; rendering must not advance the simulation.
 - Helicopter owns its motion state, rotor animation, and visual tilt.
 - Camera follows the updated helicopter position.
 
-The Physics interface and exact state ownership still need to be settled before
-implementation. Avoid duplicate authoritative copies of position or velocity.
+Helicopter owns a `MotionState` containing position and velocity. The Physics
+foundation defines axis-aligned bounds, an overlap query, and a scale-aware
+helicopter box. Swept collision and camera obstruction are future work. The
+conservative box includes rotor sweep and tilt; before collision response is
+enabled, the rooftop spawn must be raised to avoid overlapping the roof.
+Avoid duplicate authoritative copies of position or velocity.
 
 ## Decisions still pending
 
 - Altitude control bindings.
 - Acceleration, drag, braking behavior, and speed values.
 - Altitude limits and ground contact behavior.
-- Whether building collisions are included.
+- Building collisions are planned using city bounds; their export is pending.
 - Physics file layout and integration details.
 
-Implementation is deferred until requested. Existing movement code does not yet
-implement this planned physics model.
+Existing movement code does not yet implement the planned drift model.
