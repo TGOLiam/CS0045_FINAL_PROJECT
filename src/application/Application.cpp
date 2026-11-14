@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "Menus.h"
+#include "HUD.h"
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -174,13 +175,12 @@ int Application::run(int argc, char** argv)
 // UPDATE
 // --------------------------------------------------
 
+
 void Application::update(float deltaTime)
 {
     // MENU STATES
     if (appState_ != AppState::Playing)
     {
-        
-
         // Process menu navigation and customization.
         Menus::handleInput(
             input_,
@@ -192,7 +192,7 @@ void Application::update(float deltaTime)
             audio_
         );
 
-        // Start helicopter audio when entering gameplay.
+        // Manage audio depending on the current state.
         if (appState_ == AppState::Playing)
         {
             audio_.startHelicopterSound();
@@ -207,12 +207,22 @@ void Application::update(float deltaTime)
 
     // GAMEPLAY STATE
 
-    // Ensure helicopter sound is playing during gameplay.
+    // Ensure helicopter sound is playing.
     audio_.startHelicopterSound();
 
     // Update city traffic and pedestrians.
     city_.update(deltaTime);
 
+    // Handle HUD button clicks.
+    if (HUD::handleInput(input_, width_, height_))
+    {
+        audio_.playUIClick();
+        audio_.stopHelicopterSound();
+        appState_ = AppState::MainMenu;
+        physicsAccumulator_ = 0.0;
+        return;
+    }
+    
     // Read helicopter movement input.
     const float forward =
         static_cast<float>(input_.isKeyPressed('w')) -
@@ -302,6 +312,7 @@ void Application::update(float deltaTime)
 }
 
 
+
 // --------------------------------------------------
 // RENDER
 // --------------------------------------------------
@@ -350,6 +361,10 @@ void Application::render()
             helicopterTransform,
             customization_.bodyColor()
         );
+
+
+        // Render in-game HUD.
+        HUD::render(renderer_, helicopter_, width_, height_, city_.groundHeight());
     }
     else
     {

@@ -331,12 +331,6 @@ namespace
 
         drawText(
             panelX + 45.0f,
-            panelY + 55.0f,
-            "THAT HELICOPTER"
-        );
-
-        drawText(
-            panelX + 45.0f,
             panelY + 88.0f,
             "CITY HELICOPTER SIMULATOR"
         );

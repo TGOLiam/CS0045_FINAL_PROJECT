@@ -25,6 +25,14 @@ public:
         return motion_.position;
     }
 
+    Vec3 velocity() const {
+        return motion_.velocity;
+    }
+
+    float headingDegrees() const {
+        return motion_.yawDegrees;
+    }
+    
     Aabb collisionBounds(float scale) const;
 
 private:
