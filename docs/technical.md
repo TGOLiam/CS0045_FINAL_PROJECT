@@ -62,6 +62,20 @@ Scene subsystems compose objects using these helpers. The renderer owns OpenGL r
 * Store building positions, dimensions, and colors.  
 * Keep city construction separate from rendering.
 
+**Dynamic city actors**
+
+* Cars and pedestrians live in `src/city/CityActors`, updated with
+  `City::update(deltaTime)` from the application loop and rendered through
+  the shared unit primitives; they are not baked into the static city asset.
+* Cars wander the road grid: lane centers sit 2 m right of each centerline,
+  nodes are the 120 m intersections (lines at 120 m spacing offset 60 m),
+  exits are weighted (straight 5 : turn 2 : 2), boundary nodes turn inward.
+* Pedestrians walk the block sidewalk rings (5.5 m in from each road
+  centerline), bouncing at ring ends; two walkers on each block's ring.
+* Movement runs on fixed 1/120 s steps so the seeded wander is
+  deterministic; actor collisions are not simulated (they are below the
+  flight corridor).
+
 **Helicopter**
 
 * Build the body, tail, landing gear, and rotors from simple meshes.  
