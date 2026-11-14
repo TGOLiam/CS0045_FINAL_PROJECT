@@ -20,6 +20,7 @@ private:
     int width_ = 1;
     int height_ = 1;
     bool quitRequested_ = false;
+    double physicsAccumulator_ = 0.0;
     Input input_;
     Renderer renderer_;
     Camera camera_;

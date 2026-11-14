@@ -6,7 +6,7 @@
 class Helicopter
 {
 public:
-    void update(float deltaTime, float forward, float sideways);
+    void update(float deltaTime, FlightInput input, const FlightTuning& tuning);
     void draw(const Renderer& renderer, const Matrix4& worldTransform) const;
     Vec3 position() const { return motion_.position; }
     // Conservative box includes the spinning rotors and the 16-degree visual tilt.

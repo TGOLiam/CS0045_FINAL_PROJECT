@@ -91,10 +91,24 @@ int Application::run(int argc, char** argv)
 
 void Application::update(float deltaTime)
 {
-    // Route movement along fixed world axes; the model's nose faces +X.
+    // Route forward and sideways input in the helicopter's local directions.
     const float forward = static_cast<float>(input_.isKeyPressed('w')) - static_cast<float>(input_.isKeyPressed('s'));
     const float sideways = static_cast<float>(input_.isKeyPressed('d')) - static_cast<float>(input_.isKeyPressed('a'));
-    helicopter_.update(deltaTime, forward, sideways);
+    const float vertical = static_cast<float>(input_.isKeyPressed(' ')) - static_cast<float>(input_.isControlPressed());
+    const float rudder = static_cast<float>(input_.isKeyPressed('e')) - static_cast<float>(input_.isKeyPressed('q'));
+    const FlightInput flightInput = {forward, vertical, sideways, rudder};
+    // Keep drag unchanged while scaling acceleration and velocity limits, so
+    // each size reaches its speed on a comparable timescale.
+    const float speed = customization_.flightSpeedMultiplier();
+    const FlightTuning tuning = {8.0f * speed, 6.0f * speed, 0.8f, 1.2f,
+                                 12.0f * speed, 6.0f * speed};
+    // Fixed physics steps keep acceleration and rotor motion consistent across frame rates.
+    constexpr double physicsStep = 1.0 / 120.0;
+    physicsAccumulator_ += deltaTime;
+    while (physicsAccumulator_ >= physicsStep) {
+        helicopter_.update(static_cast<float>(physicsStep), flightInput, tuning);
+        physicsAccumulator_ -= physicsStep;
+    }
     camera_.setTarget(helicopter_.position());
     if (input_.isKeyPressed(27)) quitRequested_ = true;
     int deltaX = 0;

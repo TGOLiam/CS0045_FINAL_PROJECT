@@ -6,13 +6,17 @@
 struct MotionState {
     Vec3 position = {0.0f, 0.0f, 0.0f};
     Vec3 velocity = {0.0f, 0.0f, 0.0f};
+    // Positive yaw is a right turn, measured in degrees.
+    float yawDegrees = 0.0f;
+    float yawVelocity = 0.0f;
 };
 
-// Components represent requested acceleration along fixed world axes.
+// X is forward, Z is right relative to the helicopter; Y is vertical.
 struct FlightInput {
     float x = 0.0f;
     float y = 0.0f;
     float z = 0.0f;
+    float rudder = 0.0f; // -1 turns left, +1 turns right.
 };
 
 struct FlightTuning {
@@ -22,6 +26,9 @@ struct FlightTuning {
     float verticalDrag;
     float maxHorizontalSpeed;
     float maxVerticalSpeed;
+    float rudderAcceleration = 180.0f;
+    float rudderDrag = 2.0f;
+    float maxRudderSpeed = 90.0f;
 };
 
 // World-axis-aligned bounds. min and max are positions, not half-extents.
@@ -44,4 +51,7 @@ bool overlaps(const Aabb& a, const Aabb& b);
 
 // Place local bounds at an origin using a positive, uniform model scale.
 Aabb placeBounds(const Aabb& local, Vec3 origin, float scale);
+
+// Rotate local horizontal input by heading, then integrate world-space velocity.
+void stepFlight(MotionState& state, FlightInput input, const FlightTuning& tuning, float deltaTime);
 }

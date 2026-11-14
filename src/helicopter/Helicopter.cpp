@@ -5,11 +5,11 @@ Aabb Helicopter::collisionBounds(float scale) const
 {
     // Bounds surround the model and rotor sweep, including combined tilt.
     // The box remains aligned to world axes as the model leans.
-    const Aabb local = {{-2.6f, -1.8f, -1.6f}, {2.1f, 1.8f, 1.6f}};
+    const Aabb local = {{-3.1f, -1.8f, -3.1f}, {3.1f, 1.8f, 3.1f}};
     return Physics::placeBounds(local, motion_.position, scale);
 }
 
-void Helicopter::update(float deltaTime, float forward, float sideways)
+void Helicopter::update(float deltaTime, FlightInput input, const FlightTuning& tuning)
 {
     // Fixed rotor speeds: RPM converted to degrees per second.
     constexpr float mainRotorRpm = 180.0f;
@@ -17,13 +17,15 @@ void Helicopter::update(float deltaTime, float forward, float sideways)
     mainRotorDegrees_ = std::fmod(mainRotorDegrees_ + mainRotorRpm * 6.0f * deltaTime, 360.0f);
     tailRotorDegrees_ = std::fmod(tailRotorDegrees_ + tailRotorRpm * 6.0f * deltaTime, 360.0f);
     // Normalize diagonal movement so it is no faster than a single direction.
+    float forward = input.x;
+    float sideways = input.z;
     const float length = std::sqrt(forward * forward + sideways * sideways);
     if (length > 1.0f) {
         forward /= length;
         sideways /= length;
     }
-    motion_.position.x += forward * 3.0f * deltaTime;
-    motion_.position.z += sideways * 3.0f * deltaTime;
+    // Acceleration and drag allow momentum to persist after input is released.
+    Physics::stepFlight(motion_, input, tuning, deltaTime);
     // Gradually lean in the movement direction and return to level at rest.
     const float blend = 1.0f - std::exp(-6.0f * deltaTime);
     forwardTilt_ += (-forward * 16.0f - forwardTilt_) * blend;
@@ -34,6 +36,7 @@ void Helicopter::draw(const Renderer& renderer, const Matrix4& worldTransform) c
 {
     // Tilt the whole model around its local origin before positioning its parts.
     const Matrix4 tiltedTransform = worldTransform
+        * Matrix4::rotation(-motion_.yawDegrees, {0.0f, 1.0f, 0.0f})
         * Matrix4::rotation(forwardTilt_, {0.0f, 0.0f, 1.0f})
         * Matrix4::rotation(sidewaysTilt_, {1.0f, 0.0f, 0.0f});
     // Helicopter body
