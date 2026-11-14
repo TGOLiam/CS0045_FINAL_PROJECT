@@ -16,6 +16,9 @@ public:
     void startHelicopterSound();
     void stopHelicopterSound();
 
+    void startMenuMusic();
+    void stopMenuMusic();
+
     // Volume controls
     void setMasterVolume(float volume);
     void setUIVolume(float volume);
@@ -35,15 +38,18 @@ private:
 
     ma_sound uiSound_{};
     ma_sound helicopterSound_{};
+    ma_sound menuMusic_{};
 
     bool initialized_ = false;
     bool uiSoundLoaded_ = false;
     bool helicopterSoundLoaded_ = false;
     bool muted_ = false;
+    bool menuMusicLoaded_ = false;
 
     float masterVolume_ = 1.0f;
     float uiVolume_ = 0.15f;
     float helicopterVolume_ = 0.5f;
+    float menuMusicVolume_ = 0.25f;
 
     void updateVolumes();
 };

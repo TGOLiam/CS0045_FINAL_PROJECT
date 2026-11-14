@@ -1,14 +1,12 @@
 #define MINIAUDIO_IMPLEMENTATION
 #include "Audio.h"
 #include <iostream>
-
 #include <algorithm>
 
 Audio::~Audio()
 {
     shutdown();
 }
-
 
 bool Audio::initialize()
 {
@@ -28,6 +26,7 @@ bool Audio::initialize()
 
     std::cout << "Audio engine initialized successfully.\n";
 
+    // Load UI sound
     result = ma_sound_init_from_file(
         &engine_,
         "assets/audio/UI sound.wav",
@@ -48,6 +47,7 @@ bool Audio::initialize()
                   << ma_result_description(result) << '\n';
     }
 
+    // Load helicopter sound
     result = ma_sound_init_from_file(
         &engine_,
         "assets/audio/copter sound.wav",
@@ -69,11 +69,32 @@ bool Audio::initialize()
                   << ma_result_description(result) << '\n';
     }
 
+    // Load main menu music
+    result = ma_sound_init_from_file(
+        &engine_,
+        "assets/audio/MainMusic.wav",
+        MA_SOUND_FLAG_STREAM,
+        nullptr,
+        nullptr,
+        &menuMusic_
+    );
+
+    if (result == MA_SUCCESS)
+    {
+        menuMusicLoaded_ = true;
+        ma_sound_set_looping(&menuMusic_, MA_TRUE);
+        std::cout << "Main menu music loaded successfully.\n";
+    }
+    else
+    {
+        std::cerr << "Main menu music loading failed: "
+                  << ma_result_description(result) << '\n';
+    }
+
     updateVolumes();
 
-    return uiSoundLoaded_ || helicopterSoundLoaded_;
+    return uiSoundLoaded_ || helicopterSoundLoaded_ || menuMusicLoaded_;
 }
-
 
 void Audio::shutdown()
 {
@@ -91,6 +112,13 @@ void Audio::shutdown()
     {
         ma_sound_uninit(&uiSound_);
         uiSoundLoaded_ = false;
+    }
+
+    if (menuMusicLoaded_)
+    {
+        ma_sound_stop(&menuMusic_);
+        ma_sound_uninit(&menuMusic_);
+        menuMusicLoaded_ = false;
     }
 
     ma_engine_uninit(&engine_);
@@ -124,6 +152,25 @@ void Audio::stopHelicopterSound()
 
     ma_sound_stop(&helicopterSound_);
     ma_sound_seek_to_pcm_frame(&helicopterSound_, 0);
+}
+
+// Main menu music playback
+void Audio::startMenuMusic()
+{
+    if (!initialized_ || !menuMusicLoaded_ || muted_)
+        return;
+
+    if (!ma_sound_is_playing(&menuMusic_))
+        ma_sound_start(&menuMusic_);
+}
+
+void Audio::stopMenuMusic()
+{
+    if (!initialized_ || !menuMusicLoaded_)
+        return;
+
+    ma_sound_stop(&menuMusic_);
+    ma_sound_seek_to_pcm_frame(&menuMusic_, 0);
 }
 
 void Audio::setMasterVolume(float volume)
@@ -165,8 +212,13 @@ void Audio::updateVolumes()
             &helicopterSound_,
             master * helicopterVolume_
         );
-}
 
+    if (menuMusicLoaded_)
+        ma_sound_set_volume(
+            &menuMusic_,
+            master * menuMusicVolume_
+        );
+}
 
 float Audio::getMasterVolume() const
 {
@@ -187,4 +239,3 @@ bool Audio::isMuted() const
 {
     return muted_;
 }
-

@@ -172,9 +172,11 @@ void Application::update(float deltaTime) {
 
     // Manage audio depending on the current state.
     if (appState_ == AppState::Playing) {
+      audio_.stopMenuMusic();
       audio_.startHelicopterSound();
     } else {
       audio_.stopHelicopterSound();
+      audio_.startMenuMusic();
     }
 
     return;
@@ -192,6 +194,7 @@ void Application::update(float deltaTime) {
   if (HUD::handleInput(input_, width_, height_)) {
     audio_.playUIClick();
     audio_.stopHelicopterSound();
+    audio_.startMenuMusic();
     appState_ = AppState::MainMenu;
     physicsAccumulator_ = 0.0;
     return;
@@ -253,6 +256,7 @@ void Application::update(float deltaTime) {
   // key press from immediately closing the application on the next frame.
   if (escapeJustPressed) {
     audio_.stopHelicopterSound();
+    audio_.startMenuMusic();
     appState_ = AppState::MainMenu;
     physicsAccumulator_ = 0.0;
     return;
