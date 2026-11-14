@@ -72,7 +72,7 @@ Scene subsystems compose objects using these helpers. The renderer owns OpenGL r
   exits are weighted (straight 5 : turn 2 : 2), boundary nodes turn inward.
 * Pedestrians walk the block sidewalk rings (5.5 m in from each road
   centerline), bouncing at ring ends; density comes from `ActorConfig`
-  (`walkersPerBlock`, default 6 per ring) and `carsPerChunk` (default 12,
+  (`walkersPerBlock`, default 12 per ring) and `carsPerChunk` (default 12,
   matched to the reference placements; values above 12 add seeded random
   lane starts). Pass the config to `City::initialize`.
 * Movement runs on fixed 1/120 s steps so the seeded wander is

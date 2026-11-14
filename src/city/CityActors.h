@@ -12,7 +12,7 @@
 // deterministically from the actor RNG.
 struct ActorConfig {
     int carsPerChunk = 12;       // reference starts covered below 12 reads
-    int walkersPerBlock = 6;     // per block sidewalk ring, all 9 blocks
+    int walkersPerBlock = 12;    // per block sidewalk ring, all 9 blocks
 };
 
 // Dynamic road and sidewalk actors: cars wander the lane graph, pedestrians
