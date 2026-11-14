@@ -24,6 +24,9 @@ public:
     void draw(MeshId mesh, const Matrix4& model, Color color) const;
     // Renderer owns uploaded static meshes until shutdown.
     bool uploadStaticMesh(const std::vector<float>& positions, GLenum primitive, std::size_t& id);
+    bool createDynamicMesh(const std::vector<float>& positions, GLenum primitive, std::size_t& id);
+    bool updateDynamicMesh(std::size_t id, const std::vector<float>& positions, GLenum primitive);
+    void drawDynamicMesh(std::size_t id, const Matrix4& model, Color color) const;
     void drawStaticMesh(std::size_t id, const Matrix4& model, Color color) const;
     // Temporary face-range drawing supports the test cube's six colors.
     // Replace its use in Application with normal scene-object draws.
@@ -38,6 +41,7 @@ private:
     Mesh cone_;
     Mesh cylinder_;
     std::vector<std::unique_ptr<Mesh>> staticMeshes_;
+    std::vector<std::unique_ptr<Mesh>> dynamicMeshes_;
     Matrix4 view_ = Matrix4::identity();
     Matrix4 projection_ = Matrix4::identity();
     Matrix4 savedView_ = Matrix4::identity();

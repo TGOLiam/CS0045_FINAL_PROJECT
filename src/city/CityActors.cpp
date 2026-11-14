@@ -1,6 +1,7 @@
 #include "CityActors.h"
 
 #include "../math/Matrix4.h"
+#include "../renderer/PrimitiveMeshes.h"
 
 #include <cmath>
 #include <vector>
@@ -242,56 +243,88 @@ void CityActors::walkPedestrian(Pedestrian& ped, float step)
 
 void CityActors::render(Renderer& renderer) const
 {
-    // Cars: body, cabin, two side panes, four wheels. One draw call each.
+    // Actors are batched into per-color dynamic VBOs: actors transform
+    // primitive templates once into world-space vertex lists and every color
+    // sends exactly one draw call per frame.
     const Color carColors[] = {{0.85f,0.31f,0.24f}, {0.18f,0.44f,0.71f},
                                {0.91f,0.77f,0.28f}, {0.94f,0.94f,0.94f},
                                {0.24f,0.56f,0.37f}, {0.17f,0.18f,0.21f}};
     const Color glass = {0.44f, 0.66f, 0.78f};
     const Color tires = {0.08f, 0.08f, 0.09f};
-    for (const Car& car : cars_) {
-        const Matrix4 carBase = Matrix4::translation(car.x, 0.05f, car.z)
-                              * Matrix4::rotation(headingYaw[car.heading],
-                                                  {0.0f, 1.0f, 0.0f});
-        const Matrix4 body = carBase * Matrix4::translation(0.0f, 0.6f, 0.0f)
-                           * Matrix4::scale(4.4f, 0.6f, 1.8f);
-        renderer.draw(MeshId::Cube, body, carColors[car.color % 6]);
-        const Matrix4 cabin = carBase * Matrix4::translation(-0.2f, 1.175f, 0.0f)
-                            * Matrix4::scale(2.3f, 0.55f, 1.6f);
-        renderer.draw(MeshId::Cube, cabin, carColors[car.color % 6]);
-        for (float side : {-1.0f, 1.0f}) {
-            const Matrix4 pane = carBase * Matrix4::translation(-0.7f, 1.18f,
-                    side * 0.81f) * Matrix4::scale(1.0f, 0.4f, 0.02f);
-            renderer.draw(MeshId::Cube, pane, glass);
-        }
-        for (float side : {-1.0f, 1.0f}) {
-            for (float wheelX : {-1.4f, 1.4f}) {
-                const Matrix4 wheel = carBase * Matrix4::translation(wheelX,
-                        0.32f, side * 0.81f)
-                    * Matrix4::scale(0.64f, 0.64f, 0.22f);
-                renderer.draw(MeshId::Cylinder, wheel, tires);
-            }
-        }
-    }
-
-    // Pedestrians: legs, torso, head above the sidewalk slab.
     const Color shirtColors[] = {{0.79f,0.35f,0.29f}, {0.24f,0.45f,0.62f},
                                  {0.91f,0.77f,0.33f}, {0.92f,0.92f,0.92f},
                                  {0.29f,0.55f,0.38f}, {0.25f,0.28f,0.32f}};
     const Color pants = {0.21f, 0.23f, 0.27f};
     const Color head = {0.87f, 0.68f, 0.55f};
+
+    static const std::vector<float> cubeTemplate = PrimitiveMeshes::cube();
+    static const std::vector<float> cylinderTemplate = PrimitiveMeshes::cylinder();
+
+    // Both templates contain triangles, so geometry can share color batches.
+    std::map<std::tuple<float, float, float>, std::vector<float>> batches;
+    const auto emit = [&](const Matrix4& model, Color color, bool cylinder = false) {
+        const std::vector<float>& source = cylinder ? cylinderTemplate : cubeTemplate;
+        std::vector<float>& out = batches[{color.r, color.g, color.b}];
+        const float* m = model.data();
+        for (std::size_t i = 0; i < source.size(); i += 3) {
+            const float x = source[i];
+            const float y = source[i + 1];
+            const float z = source[i + 2];
+            out.push_back(m[0] * x + m[4] * y + m[8] * z + m[12]);
+            out.push_back(m[1] * x + m[5] * y + m[9] * z + m[13]);
+            out.push_back(m[2] * x + m[6] * y + m[10] * z + m[14]);
+        }
+    };
+
+    for (const Car& car : cars_) {
+        const Matrix4 carBase = Matrix4::translation(car.x, 0.05f, car.z)
+                              * Matrix4::rotation(headingYaw[car.heading],
+                                                  {0.0f, 1.0f, 0.0f});
+        emit(carBase * Matrix4::translation(0.0f, 0.6f, 0.0f)
+                    * Matrix4::scale(4.4f, 0.6f, 1.8f),
+             carColors[car.color % 6]);
+        emit(carBase * Matrix4::translation(-0.2f, 1.175f, 0.0f)
+                    * Matrix4::scale(2.3f, 0.55f, 1.6f),
+             carColors[car.color % 6]);
+        for (float side : {-1.0f, 1.0f}) {
+            emit(carBase * Matrix4::translation(-0.7f, 1.18f, side * 0.81f)
+                        * Matrix4::scale(1.0f, 0.4f, 0.02f), glass);
+        }
+        for (float side : {-1.0f, 1.0f}) {
+            for (float wheelX : {-1.4f, 1.4f}) {
+                emit(carBase * Matrix4::translation(wheelX, 0.32f, side * 0.81f)
+                            * Matrix4::scale(0.64f, 0.64f, 0.22f),
+                     tires, true);
+            }
+        }
+    }
+
     for (const Pedestrian& ped : pedestrians_) {
         const Vec3 position = ringPoint(ped.centerX, ped.centerZ, ped.s);
         const Matrix4 base = Matrix4::translation(position.x, 0.15f, position.z)
             * Matrix4::rotation(ringYaw(ped.s), {0.0f, 1.0f, 0.0f});
-        const Matrix4 legs = base * Matrix4::translation(0.0f, 0.4f, 0.0f)
-                           * Matrix4::scale(0.42f, 0.8f, 0.26f);
-        renderer.draw(MeshId::Cube, legs, pants);
         const float sway = 0.02f * std::sin(ped.s * 0.35f);
-        const Matrix4 torso = base * Matrix4::translation(0.0f, 1.15f + sway, 0.0f)
-                            * Matrix4::scale(0.52f, 0.7f, 0.3f);
-        renderer.draw(MeshId::Cube, torso, shirtColors[ped.color % 6]);
-        const Matrix4 headModel = base * Matrix4::translation(0.0f,
-                1.66f + sway, 0.0f) * Matrix4::scale(0.28f, 0.3f, 0.28f);
-        renderer.draw(MeshId::Cube, headModel, head);
+        emit(base * Matrix4::translation(0.0f, 0.4f, 0.0f)
+                    * Matrix4::scale(0.42f, 0.8f, 0.26f), pants);
+        emit(base * Matrix4::translation(0.0f, 1.15f + sway, 0.0f)
+                    * Matrix4::scale(0.52f, 0.7f, 0.3f),
+             shirtColors[ped.color % 6]);
+        emit(base * Matrix4::translation(0.0f, 1.66f + sway, 0.0f)
+                    * Matrix4::scale(0.28f, 0.3f, 0.28f), head);
+    }
+
+    // Stable batch order keeps dynamic mesh ids valid across frames.
+    for (const auto& entry : batches) {
+        std::size_t id = 0;
+        const auto found = batchMeshIds_.find(entry.first);
+        if (found != batchMeshIds_.end()) {
+            id = found->second;
+            if (!renderer.updateDynamicMesh(id, entry.second, GL_TRIANGLES)) return;
+        } else {
+            if (!renderer.createDynamicMesh(entry.second, GL_TRIANGLES, id)) return;
+            batchMeshIds_.emplace(entry.first, id);
+        }
+        renderer.drawDynamicMesh(id, Matrix4::identity(),
+                                 {std::get<0>(entry.first), std::get<1>(entry.first), std::get<2>(entry.first)});
     }
 }

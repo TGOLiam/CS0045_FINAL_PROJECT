@@ -154,6 +154,30 @@ bool Renderer::uploadStaticMesh(const std::vector<float>& positions, GLenum prim
     return true;
 }
 
+bool Renderer::createDynamicMesh(const std::vector<float>& positions, GLenum primitive, std::size_t& id)
+{
+    auto mesh = std::make_unique<Mesh>();
+    if (!mesh->uploadDynamic(positions, primitive)) {
+        mesh->release();
+        return false;
+    }
+    id = dynamicMeshes_.size();
+    dynamicMeshes_.push_back(std::move(mesh));
+    return true;
+}
+
+bool Renderer::updateDynamicMesh(std::size_t id, const std::vector<float>& positions, GLenum primitive)
+{
+    return id < dynamicMeshes_.size() && dynamicMeshes_[id]->uploadDynamic(positions, primitive);
+}
+
+void Renderer::drawDynamicMesh(std::size_t id, const Matrix4& model, Color color) const
+{
+    if (id >= dynamicMeshes_.size()) throw std::out_of_range("Unknown dynamic mesh");
+    applyTransformAndColor(model, color);
+    dynamicMeshes_[id]->draw();
+}
+
 void Renderer::drawStaticMesh(std::size_t id, const Matrix4& model, Color color) const
 {
     if (id >= staticMeshes_.size()) throw std::out_of_range("Unknown static mesh");
@@ -172,6 +196,8 @@ void Renderer::shutdown()
 {
     // Balance the matrix stacks if shutdown occurs during an interface pass.
     if (interfaceActive_) endInterface();
+    for (const auto& mesh : dynamicMeshes_) mesh->release();
+    dynamicMeshes_.clear();
     for (const auto& mesh : staticMeshes_) mesh->release();
     staticMeshes_.clear();
     cube_.release();

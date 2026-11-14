@@ -11,6 +11,9 @@ public:
 
     // Upload xyz positions once. A current OpenGL context is required.
     bool upload(const std::vector<GLfloat>& positions, GLenum primitive);
+    // Upload or replace contents of a dynamic buffer; recomputes the vertex
+    // count so draw() reflects the new size.
+    bool uploadDynamic(const std::vector<GLfloat>& positions, GLenum primitive);
     void draw() const;
     // Draw a subset of vertices; first and count are vertex indices, not bytes.
     void drawRange(GLint first, GLsizei count) const;

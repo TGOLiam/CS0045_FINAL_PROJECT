@@ -3,7 +3,9 @@
 #include "../renderer/Color.h"
 #include "../renderer/Renderer.h"
 #include <cstddef>
+#include <map>
 #include <random>
+#include <tuple>
 #include <vector>
 
 // Density knobs for the dynamic city actors. Defaults keep the reference
@@ -11,7 +13,7 @@
 // sensible ranges and extra cars beyond the 12 reference starts are placed
 // deterministically from the actor RNG.
 struct ActorConfig {
-    int carsPerChunk = 28;       // ~2.3x the 12 reference starts; extras are seeded
+    int carsPerChunk = 35;       // extras beyond the reference starts are seeded
     int walkersPerBlock = 12;    // per block sidewalk ring, all 9 blocks
 };
 
@@ -56,4 +58,5 @@ private:
     std::vector<Car> cars_;
     std::vector<Pedestrian> pedestrians_;
     std::mt19937 rng_;
+    mutable std::map<std::tuple<float, float, float>, std::size_t> batchMeshIds_;
 };
