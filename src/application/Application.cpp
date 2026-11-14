@@ -111,7 +111,7 @@ void Application::update(float deltaTime)
     // Keep drag unchanged while scaling acceleration and velocity limits, so
     // each size reaches its speed on a comparable timescale.
     const float speed = customization_.flightSpeedMultiplier();
-    const FlightTuning tuning = {8.0f * speed, 6.0f * speed, 0.8f, 1.2f,
+    const FlightTuning tuning = {12.0f * speed, 9.0f * speed, 0.8f, 1.2f,
                                  12.0f * speed, 6.0f * speed};
     // Fixed physics steps keep acceleration and rotor motion consistent across frame rates.
     constexpr double physicsStep = 1.0 / 120.0;

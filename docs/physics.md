@@ -39,9 +39,10 @@ foundation defines axis-aligned bounds, an overlap query, and a scale-aware
 helicopter box. City exposes static building and rooftop boxes plus ground
 height from its generated collision asset. Helicopter movement sweeps its box
 against those bounds and ground, then slides along contact surfaces. The
-conservative box includes rotor sweep and tilt; the rooftop spawn is raised to
-keep it clear, so the visible skids hover above the roof. Camera obstruction
-is future work. Existing overlaps are not automatically resolved.
+box is 75% of the conservative rotor-and-tilt envelope, so blade tips or tilted
+parts can extend beyond it. The rooftop spawn is raised to keep it clear, so
+the visible skids may hover above the roof. Camera obstruction is future work.
+Existing overlaps are not automatically resolved.
 Avoid duplicate authoritative copies of position or velocity.
 
 ## Decisions still pending

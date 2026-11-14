@@ -11,7 +11,7 @@ public:
     void placeAbove(float surfaceHeight, float scale);
     void draw(const Renderer& renderer, const Matrix4& worldTransform) const;
     Vec3 position() const { return motion_.position; }
-    // Conservative box includes the spinning rotors and the 16-degree visual tilt.
+    // Reduced axis-aligned box, scaled with the selected helicopter size.
     Aabb collisionBounds(float scale) const;
 
 private:

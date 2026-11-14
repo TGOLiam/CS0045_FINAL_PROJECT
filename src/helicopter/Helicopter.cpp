@@ -3,9 +3,11 @@
 
 Aabb Helicopter::localCollisionBounds()
 {
-    // Bounds surround the model and rotor sweep, including combined tilt.
-    // The box remains aligned to world axes as the model leans.
-    return {{-3.1f, -1.8f, -3.1f}, {3.1f, 1.8f, 3.1f}};
+    // A reduced world-aligned box makes navigation less restrictive. Rotor
+    // tips and tilted parts can extend beyond it; this is not an exact hull.
+    constexpr float hitboxScale = 0.75f;
+    return {{-3.1f * hitboxScale, -1.8f * hitboxScale, -3.1f * hitboxScale},
+            { 3.1f * hitboxScale,  1.8f * hitboxScale,  3.1f * hitboxScale}};
 }
 
 Aabb Helicopter::collisionBounds(float scale) const
