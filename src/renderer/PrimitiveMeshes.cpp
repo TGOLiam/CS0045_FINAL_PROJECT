@@ -54,3 +54,25 @@ std::vector<float> PrimitiveMeshes::cone()
     }
     return vertices;
 }
+
+std::vector<float> PrimitiveMeshes::cylinder()
+{
+    constexpr int segments = 8;
+    constexpr float pi = 3.14159265358979323846f;
+    std::vector<float> vertices;
+    for (int i = 0; i < segments; ++i) {
+        const float a = 2.0f * pi * i / segments;
+        const float b = 2.0f * pi * (i + 1) / segments;
+        const float ax = 0.5f * std::cos(a);
+        const float ay = 0.5f * std::sin(a);
+        const float bx = 0.5f * std::cos(b);
+        const float by = 0.5f * std::sin(b);
+        vertices.insert(vertices.end(), {
+            ax,ay,-0.5f, bx,by,-0.5f, bx,by,0.5f,
+            ax,ay,-0.5f, bx,by,0.5f, ax,ay,0.5f,
+            0,0,-0.5f, bx,by,-0.5f, ax,ay,-0.5f,
+            0,0,0.5f, ax,ay,0.5f, bx,by,0.5f
+        });
+    }
+    return vertices;
+}

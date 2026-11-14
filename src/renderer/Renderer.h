@@ -6,7 +6,7 @@
 #include <memory>
 #include <vector>
 
-enum class MeshId { Cube, Line, Point, Quad, Disc, Cone };
+enum class MeshId { Cube, Line, Point, Quad, Disc, Cone, Cylinder };
 
 class Renderer {
 public:
@@ -36,6 +36,7 @@ private:
     Mesh quad_;
     Mesh disc_;
     Mesh cone_;
+    Mesh cylinder_;
     std::vector<std::unique_ptr<Mesh>> staticMeshes_;
     Matrix4 view_ = Matrix4::identity();
     Matrix4 projection_ = Matrix4::identity();

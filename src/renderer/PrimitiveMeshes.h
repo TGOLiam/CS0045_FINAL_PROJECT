@@ -12,4 +12,6 @@ std::vector<float> quad();
 std::vector<float> disc();
 // Eight-sided cone centered on XZ, with base y=0, tip y=1, diameter 1.
 std::vector<float> cone();
+// Eight-sided cylinder along Z, centered at the origin, unit diameter and length.
+std::vector<float> cylinder();
 }
