@@ -41,6 +41,7 @@ void Renderer::draw(MeshId id, const Matrix4& model, Color color) const
     case MeshId::Disc: capture(PrimitiveMeshes::disc(),GL_TRIANGLES,model,color); break;
     case MeshId::Line: capture(PrimitiveMeshes::line(),GL_LINES,model,color); break;
     case MeshId::Point: capture(PrimitiveMeshes::point(),GL_POINTS,model,color); break;
+    case MeshId::Cone: capture(PrimitiveMeshes::cone(),GL_TRIANGLES,model,color); break;
     }
 }
 template<typename T> void write(std::ofstream& out,const T& value) { out.write(reinterpret_cast<const char*>(&value),sizeof(value)); }

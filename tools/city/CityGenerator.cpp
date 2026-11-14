@@ -20,6 +20,32 @@ bool chunkHasPark(int x, int z)
     return (x == 0 && z == 0) || ((x * 17 + z * 31) % 3 + 3) % 3 == 0;
 }
 
+template <typename Callback>
+void forEachTree(Callback callback)
+{
+    // Local positions from the reference: mirrored park trees and street trees.
+    const float parkPositions[][2] = {{14,14}, {36,12}, {12,36}, {24,24},
+                                      {42,24}, {24,42}, {44,44}, {10,46}};
+    const float streetPositions[][2] = {{-120,-66}, {0,-66}, {120,-66}, {-120,54},
+                                        {120,54}, {-66,-120}, {-66,120}, {66,-120},
+                                        {66,0}, {120,66}, {120,174}, {0,174}};
+    for (int chunkZ = -1; chunkZ <= 1; ++chunkZ) {
+        for (int chunkX = -1; chunkX <= 1; ++chunkX) {
+            const float offsetX = chunkX * chunkSize;
+            const float offsetZ = chunkZ * chunkSize;
+            if (chunkHasPark(chunkX, chunkZ)) {
+                for (float sx : {-1.0f, 1.0f}) {
+                    for (float sz : {-1.0f, 1.0f}) {
+                        for (const auto& p : parkPositions)
+                            callback(offsetX + 120.0f + sx * p[0], offsetZ + 120.0f + sz * p[1]);
+                    }
+                }
+            }
+            for (const auto& p : streetPositions) callback(offsetX + p[0], offsetZ + p[1]);
+        }
+    }
+}
+
 enum class BuildingStyle { Tower, Residential, Commercial };
 
 struct Building {
@@ -251,6 +277,8 @@ std::vector<Aabb> makeCollisionBounds()
     box(0,3.45f,15.6f,5.6f,0.3f,1.2f);
     box(-11,h+1.25f,-11.5f,6,2.5f,4);
     box(12.5f,h+1.5f,12.5f,2.4f,3,2.4f);
+    // Trees use simple trunk collision; foliage remains visual geometry.
+    forEachTree([&](float x, float z) { box(x, 1.0f, z, 0.7f, 2.0f, 0.7f); });
     return boxes;
 }
 
@@ -392,6 +420,18 @@ void City::render(Renderer& renderer) const
             drawDiscAt(renderer, x, 0.05f, z, 10.0f, water);
         }
     }
+
+    // Trees reuse a cube trunk and the eight-sided cone mesh. The exporter
+    // batches their solid-colored triangles into the static city asset.
+    forEachTree([&](float x, float z) {
+        drawBox(renderer, x, 1.0f, z, 0.7f, 2.0f, 0.7f, {0.42f, 0.29f, 0.18f});
+        const Matrix4 lower = Matrix4::translation(x, 1.6f, z)
+                            * Matrix4::scale(3.6f, 2.6f, 3.6f);
+        const Matrix4 upper = Matrix4::translation(x, 3.4f, z)
+                            * Matrix4::scale(2.4f, 2.2f, 2.4f);
+        renderer.draw(MeshId::Cone, lower, {0.25f, 0.49f, 0.29f});
+        renderer.draw(MeshId::Cone, upper, {0.31f, 0.60f, 0.35f});
+    });
 
     // Draw the connected grid over the whole area. Boundary roads are half
     // width; the matching half would belong to the next chunk outside this view.

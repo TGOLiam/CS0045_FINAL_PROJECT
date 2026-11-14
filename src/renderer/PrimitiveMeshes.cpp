@@ -36,3 +36,21 @@ std::vector<float> PrimitiveMeshes::disc()
     }
     return vertices;
 }
+
+std::vector<float> PrimitiveMeshes::cone()
+{
+    constexpr int segments = 8;
+    constexpr float pi = 3.14159265358979323846f;
+    std::vector<float> vertices;
+    for (int i = 0; i < segments; ++i) {
+        const float a = 2.0f * pi * i / segments;
+        const float b = 2.0f * pi * (i + 1) / segments;
+        const float ax = 0.5f * std::cos(a);
+        const float az = 0.5f * std::sin(a);
+        const float bx = 0.5f * std::cos(b);
+        const float bz = 0.5f * std::sin(b);
+        vertices.insert(vertices.end(), {ax, 0.0f, az, 0.0f, 1.0f, 0.0f, bx, 0.0f, bz,
+                                         0.0f, 0.0f, 0.0f, ax, 0.0f, az, bx, 0.0f, bz});
+    }
+    return vertices;
+}
