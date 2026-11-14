@@ -2,6 +2,7 @@
 
 #include "../renderer/Color.h"
 #include "../physics/Physics.h"
+#include "CityActors.h"
 #include <cstddef>
 #include <vector>
 
@@ -10,6 +11,7 @@ class Renderer;
 class City {
 public:
     bool initialize(Renderer& renderer);
+    void update(float deltaTime);
     void render(Renderer& renderer) const;
     const std::vector<Aabb>& collisionBounds() const { return collisionBounds_; }
     float groundHeight() const { return groundHeight_; }
@@ -22,4 +24,5 @@ private:
     std::vector<Batch> batches_;
     std::vector<Aabb> collisionBounds_;
     float groundHeight_ = 0.0f;
+    CityActors actors_;
 };

@@ -139,7 +139,14 @@ bool City::initialize(Renderer& renderer)
     batches_ = std::move(loaded);
     collisionBounds_ = std::move(boxes);
     groundHeight_ = ground;
+    actors_.initialize();
     return true;
+}
+
+void City::update(float deltaTime)
+{
+    // Dynamic actors move before the frame renders; the baked city is static.
+    actors_.update(deltaTime);
 }
 
 void City::render(Renderer& renderer) const
@@ -148,4 +155,5 @@ void City::render(Renderer& renderer) const
     for (const Batch& batch : batches_) {
         renderer.drawStaticMesh(batch.meshId, world, batch.color);
     }
+    actors_.render(renderer);
 }

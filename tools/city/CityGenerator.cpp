@@ -63,24 +63,8 @@ struct DecorBlock {
     const DecorItem* items;
 };
 
-template <typename Callback>
-void forEachCar(Callback callback)
-{
-    struct CarPlacement { float x; float z; float yaw; int color; };
-    // Cars face local +X; yaw places them in the reference's right-hand lanes.
-    const CarPlacement placements[] = {
-        {-90,-58,0,0}, {40,-62,180,1}, {-150,62,0,2}, {100,58,180,3},
-        {-62,-100,270,4}, {-58,100,90,5}, {58,30,270,1}, {62,-30,90,0},
-        {-30,62,0,3}, {130,58,180,2}, {178,-100,270,4}, {-178,40,90,5}
-    };
-    for (int chunkZ = -1; chunkZ <= 1; ++chunkZ) {
-        for (int chunkX = -1; chunkX <= 1; ++chunkX) {
-            for (const CarPlacement& car : placements)
-                callback(car.x + chunkX * chunkSize, car.z + chunkZ * chunkSize,
-                         car.yaw, car.color);
-        }
-    }
-}
+// Cars and pedestrians are dynamic actors at runtime (src/city/CityActors);
+// they are no longer baked into the static city asset.
 
 // Block-detail placements from the design reference (metres, chunk-local).
 // Flat items (walkway, plaza, garden, pads) store corner extents [x1,z1,x2,z2];
@@ -491,12 +475,6 @@ std::vector<Aabb> makeCollisionBounds()
     box(12.5f,h+1.5f,12.5f,2.4f,3,2.4f);
     // Trees use simple trunk collision; foliage remains visual geometry.
     forEachTree([&](float x, float z) { box(x, 1.0f, z, 0.7f, 2.0f, 0.7f); });
-    // Static car collision boxes cover the body, cabin and wheels.
-    forEachCar([&](float x, float z, float yaw, int) {
-        const bool alongZ = yaw == 90.0f || yaw == 270.0f;
-        box(x, 0.05f + 1.45f/2.0f, z, alongZ ? 1.84f : 4.4f,
-            1.45f, alongZ ? 4.4f : 1.84f);
-    });
     // Street furniture gets small AABBs; shrubs stay visual so they remain
     // passable foliage and pads are flat ground shading.
     forEachDecor([&](const DecorItem& item, float ox, float oz) {
@@ -661,32 +639,6 @@ void City::render(Renderer& renderer) const
                             * Matrix4::scale(2.4f, 2.2f, 2.4f);
         renderer.draw(MeshId::Cone, lower, {0.25f, 0.49f, 0.29f});
         renderer.draw(MeshId::Cone, upper, {0.31f, 0.60f, 0.35f});
-    });
-
-    // Static cars: one local model is positioned and rotated into each lane.
-    const Color carColors[] = {{0.85f,0.31f,0.24f}, {0.18f,0.44f,0.71f},
-                               {0.91f,0.77f,0.28f}, {0.94f,0.94f,0.94f},
-                               {0.24f,0.56f,0.37f}, {0.17f,0.18f,0.21f}};
-    const Color glass = {0.44f, 0.66f, 0.78f};
-    const Color tires = {0.08f, 0.08f, 0.09f};
-    forEachCar([&](float x, float z, float yaw, int color) {
-        const Matrix4 car = Matrix4::translation(x, 0.05f, z)
-                          * Matrix4::rotation(yaw, {0.0f, 1.0f, 0.0f});
-        auto part = [&](MeshId mesh, float px, float py, float pz,
-                        float width, float height, float depth, Color tint) {
-            renderer.draw(mesh, car * Matrix4::translation(px, py, pz)
-                                    * Matrix4::scale(width, height, depth), tint);
-        };
-        part(MeshId::Cube, 0, 0.6f, 0, 4.4f, 0.6f, 1.8f, carColors[color]);
-        part(MeshId::Cube, -0.2f, 1.175f, 0, 2.3f, 0.55f, 1.6f, carColors[color]);
-        for (float side : {-1.0f, 1.0f}) {
-            part(MeshId::Cube, -0.7f, 1.18f, side * 0.81f, 1.0f, 0.4f, 0.02f, glass);
-            part(MeshId::Cube, 0.4f, 1.18f, side * 0.81f, 0.9f, 0.4f, 0.02f, glass);
-            for (float wheelX : {-1.4f, 1.4f})
-                part(MeshId::Cylinder, wheelX, 0.32f, side * 0.81f, 0.64f, 0.64f, 0.22f, tires);
-        }
-        part(MeshId::Cube, 0.96f, 1.18f, 0, 0.02f, 0.4f, 1.4f, glass);
-        part(MeshId::Cube, -1.36f, 1.18f, 0, 0.02f, 0.4f, 1.4f, glass);
     });
 
     // Draw the connected grid over the whole area. Boundary roads are half

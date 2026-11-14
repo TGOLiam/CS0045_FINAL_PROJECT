@@ -102,6 +102,8 @@ int Application::run(int argc, char** argv)
 
 void Application::update(float deltaTime)
 {
+    // Advance city traffic and pedestrians before anything renders.
+    city_.update(deltaTime);
     // Route forward and sideways input in the helicopter's local directions.
     const float forward = static_cast<float>(input_.isKeyPressed('w')) - static_cast<float>(input_.isKeyPressed('s'));
     const float sideways = static_cast<float>(input_.isKeyPressed('d')) - static_cast<float>(input_.isKeyPressed('a'));
