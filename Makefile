@@ -1,5 +1,5 @@
 CXX ?= g++
-CXXFLAGS ?= -std=c++17 -Wall -Wextra -Wpedantic
+CXXFLAGS ?= -std=c++17 -Wall -Wextra -Wpedantic -O2
 LDLIBS ?= -lGLEW -lglut -lGL -lGLU
 
 TARGET := build/helicopter-simulator
