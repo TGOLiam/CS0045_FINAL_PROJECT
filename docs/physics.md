@@ -34,7 +34,8 @@ using delta time before rendering; rendering must not advance the simulation.
 
 Helicopter owns a `MotionState` containing position and velocity. The Physics
 foundation defines axis-aligned bounds, an overlap query, and a scale-aware
-helicopter box. Swept collision and camera obstruction are future work. The
+helicopter box. City exposes static building and rooftop boxes plus ground
+height from its generated collision asset. Swept collision and camera obstruction are future work. The
 conservative box includes rotor sweep and tilt; before collision response is
 enabled, the rooftop spawn must be raised to avoid overlapping the roof.
 Avoid duplicate authoritative copies of position or velocity.
@@ -44,7 +45,7 @@ Avoid duplicate authoritative copies of position or velocity.
 - Altitude control bindings.
 - Acceleration, drag, braking behavior, and speed values.
 - Altitude limits and ground contact behavior.
-- Building collisions are planned using city bounds; their export is pending.
+- Building collisions are planned using the exported city bounds.
 - Physics file layout and integration details.
 
 Existing movement code does not yet implement the planned drift model.

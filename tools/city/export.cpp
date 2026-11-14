@@ -46,7 +46,7 @@ void Renderer::draw(MeshId id, const Matrix4& model, Color color) const
 template<typename T> void write(std::ofstream& out,const T& value) { out.write(reinterpret_cast<const char*>(&value),sizeof(value)); }
 int main(int argc, char** argv)
 {
-    if (argc != 2) { std::cerr << "Usage: city-export OUTPUT\n"; return 1; }
+    if (argc != 3) { std::cerr << "Usage: city-export MESH COLLISION-RAW\n"; return 1; }
     Renderer renderer;
     City city;
     if (!city.initialize(renderer)) return 1;
@@ -66,6 +66,15 @@ int main(int argc, char** argv)
         out.write(reinterpret_cast<const char*>(data.data()),data.size()*sizeof(float));
         vertices += vertexCount;
     }
-    std::cout << "batches=" << count << " vertices=" << vertices << '\n';
-    return out ? 0 : 1;
+    if (!out) return 1;
+    std::ofstream collision(argv[2], std::ios::binary);
+    const auto bounds = city.collisionBounds();
+    const std::uint32_t boxCount = static_cast<std::uint32_t>(bounds.size());
+    write(collision, boxCount);
+    for (const Aabb& box : bounds) {
+        write(collision, box.min.x); write(collision, box.min.y); write(collision, box.min.z);
+        write(collision, box.max.x); write(collision, box.max.y); write(collision, box.max.z);
+    }
+    std::cout << "batches=" << count << " vertices=" << vertices << " collision_boxes=" << boxCount << '\n';
+    return collision ? 0 : 1;
 }

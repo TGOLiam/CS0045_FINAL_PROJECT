@@ -209,6 +209,45 @@ const std::vector<Building>& cityBuildings()
     return buildings;
 }
 
+std::vector<Aabb> makeCollisionBounds()
+{
+    std::vector<Aabb> boxes;
+    auto box = [&](float x, float y, float z, float w, float h, float d) {
+        boxes.push_back({{x-w/2, y-h/2, z-d/2}, {x+w/2, y+h/2, z+d/2}});
+    };
+    for (const Building& b : cityBuildings()) {
+        box(b.x, b.height/2, b.z, b.width, b.height, b.depth);
+        for (float side : {-1.0f, 1.0f}) {
+            box(b.x, b.height+0.4f, b.z+side*(b.depth/2-0.25f), b.width, 0.8f, 0.5f);
+            box(b.x+side*(b.width/2-0.25f), b.height+0.4f, b.z, 0.5f, 0.8f, b.depth-1.0f);
+        }
+        if (b.style == BuildingStyle::Tower) {
+            box(b.x-b.width/2+4, b.height+1.25f, b.z-b.depth/2+3.5f, 6, 2.5f, 4);
+            box(b.x+b.width/2-2.5f, b.height+1.5f, b.z+b.depth/2-2.5f, 2.4f, 3, 2.4f);
+        } else if (b.style == BuildingStyle::Residential) {
+            box(b.x, b.height+1.2f, b.z-b.depth/4, 3, 2.4f, 3);
+            for (float side : {-1.0f, 1.0f})
+                box(b.x+side*b.width/4, b.height+1.2f, b.z+b.depth/4, 1, 2.4f, 1);
+        } else {
+            const int count = std::max(1, static_cast<int>(b.width/12));
+            for (int i=0; i<count; ++i)
+                box(b.x+(i-(count-1)/2.0f)*6, b.height+0.6f, b.z+b.depth/4, 2, 1.2f, 1.5f);
+        }
+    }
+    // Central tower, parapets, canopy and rooftop equipment; include the
+    // helipad markings' height in the roof collision surface.
+    const float h = CITY_TOWER_HEIGHT;
+    box(0, (h+0.09f)/2, 0, 30, h+0.09f, 30);
+    for (float side : {-1.0f, 1.0f}) {
+        box(0,h+0.4f,side*14.75f,30,0.8f,0.5f);
+        box(side*14.75f,h+0.4f,0,0.5f,0.8f,29);
+    }
+    box(0,3.45f,15.6f,5.6f,0.3f,1.2f);
+    box(-11,h+1.25f,-11.5f,6,2.5f,4);
+    box(12.5f,h+1.5f,12.5f,2.4f,3,2.4f);
+    return boxes;
+}
+
 void drawBuildingRoof(Renderer& renderer, const Building& b)
 {
     const bool tower = b.style == BuildingStyle::Tower;
@@ -249,6 +288,11 @@ void drawDisc(Renderer& renderer, float y, float diameter, Color color)
                         * Matrix4::scale(diameter, diameter, 1.0f);
     renderer.draw(MeshId::Disc, model, color);
 }
+}
+
+std::vector<Aabb> City::collisionBounds() const
+{
+    return makeCollisionBounds();
 }
 
 bool City::initialize(Renderer& renderer)

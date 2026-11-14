@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../renderer/Color.h"
+#include "../physics/Physics.h"
 #include <cstddef>
 #include <vector>
 
@@ -10,6 +11,8 @@ class City {
 public:
     bool initialize(Renderer& renderer);
     void render(Renderer& renderer) const;
+    const std::vector<Aabb>& collisionBounds() const { return collisionBounds_; }
+    float groundHeight() const { return groundHeight_; }
 
 private:
     struct Batch {
@@ -17,4 +20,6 @@ private:
         Color color;
     };
     std::vector<Batch> batches_;
+    std::vector<Aabb> collisionBounds_;
+    float groundHeight_ = 0.0f;
 };

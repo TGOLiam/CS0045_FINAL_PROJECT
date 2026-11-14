@@ -41,6 +41,53 @@ bool City::initialize(Renderer& renderer)
         std::cerr << "Could not open assets/city/city.mesh; run from the project root.\n";
         return false;
     }
+    // Match collision boxes to the exact mesh so stale sidecars are rejected.
+    std::uint64_t fingerprint = 14695981039346656037ULL;
+    char buffer[8192];
+    while (file.read(buffer, sizeof(buffer)) || file.gcount() > 0) {
+        for (std::streamsize i = 0; i < file.gcount(); ++i) {
+            fingerprint ^= static_cast<unsigned char>(buffer[i]);
+            fingerprint *= 1099511628211ULL;
+        }
+    }
+    if (file.bad()) {
+        std::cerr << "Could not read city mesh for collision verification.\n";
+        return false;
+    }
+    file.clear();
+    file.seekg(0);
+
+    std::ifstream collision("assets/city/city.collision", std::ios::binary);
+    char collisionMagic[8];
+    std::uint64_t expectedFingerprint = 0;
+    std::uint32_t boxCount = 0;
+    float ground = 0.0f;
+    if (!collision.read(collisionMagic, sizeof(collisionMagic)) ||
+        std::memcmp(collisionMagic, "CITYCOL1", 8) != 0 ||
+        !readValue(collision, expectedFingerprint) || expectedFingerprint != fingerprint ||
+        !readValue(collision, boxCount) || boxCount == 0 || boxCount > 100000 ||
+        !readValue(collision, ground) || !std::isfinite(ground)) {
+        std::cerr << "Invalid or mismatched city collision asset; run make city-asset.\n";
+        return false;
+    }
+    std::vector<Aabb> boxes;
+    boxes.reserve(boxCount);
+    for (std::uint32_t i = 0; i < boxCount; ++i) {
+        Aabb b{};
+        if (!readValue(collision,b.min.x) || !readValue(collision,b.min.y) || !readValue(collision,b.min.z) ||
+            !readValue(collision,b.max.x) || !readValue(collision,b.max.y) || !readValue(collision,b.max.z) ||
+            !std::isfinite(b.min.x) || !std::isfinite(b.min.y) || !std::isfinite(b.min.z) ||
+            !std::isfinite(b.max.x) || !std::isfinite(b.max.y) || !std::isfinite(b.max.z) ||
+            b.min.x >= b.max.x || b.min.y >= b.max.y || b.min.z >= b.max.z) {
+            std::cerr << "Invalid city collision box " << i << ".\n";
+            return false;
+        }
+        boxes.push_back(b);
+    }
+    if (collision.peek() != std::char_traits<char>::eof()) {
+        std::cerr << "Unexpected data after city collision asset.\n";
+        return false;
+    }
     char magic[8];
     std::uint32_t version = 0;
     std::uint32_t batchCount = 0;
@@ -90,6 +137,8 @@ bool City::initialize(Renderer& renderer)
         return false;
     }
     batches_ = std::move(loaded);
+    collisionBounds_ = std::move(boxes);
+    groundHeight_ = ground;
     return true;
 }
 

@@ -17,13 +17,16 @@ make
 The current application opens a full-screen window; press Escape to exit. Run
 `make clean` to remove generated build files.
 
-The city is loaded from `assets/city/city.mesh`, so run the program from the
+The city is loaded from `assets/city/city.mesh` and `city.collision`, so run the program from the
 project root. The asset contains the current fixed 3 × 3 city geometry and solid
 colors, including its roads, buildings and helipad. Its binary format is:
 `CITYMESH` (8 bytes), version and batch count (little-endian uint32), followed
 by batches of primitive and vertex count (uint32), RGBA (four IEEE-754 float32)
 and XYZ positions (three float32 per vertex). Version 1 requires a little-endian
 system. Renderer uploads these static batches once during initialization.
+The collision asset contains building and rooftop axis-aligned boxes and ground
+height. A mesh fingerprint detects a collision file from a different build.
+The bounds are loaded but collision response is not implemented yet.
 
 ### Editing the city
 
@@ -37,7 +40,7 @@ make
 ```
 
 The generator validates building overlap, road/sidewalk clearance and the
-reserved park and helipad areas before replacing the mesh. It requires Python 3,
+reserved park and helipad areas before replacing the mesh and collision data. It requires Python 3,
 the C++ compiler and the OpenGL development headers; Python is not needed at
 runtime. The generator's geometry rules live in `tools/city/CityGenerator.cpp`.
 The current chunk template requires a 360-unit chunk, 120-unit road spacing,

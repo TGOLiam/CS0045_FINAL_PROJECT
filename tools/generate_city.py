@@ -104,20 +104,41 @@ def main():
                        '-o', str(tmp/'city-export')]
             subprocess.run(command, cwd=ROOT, check=True)
             result = tmp/'city.mesh'
-            subprocess.run([str(tmp/'city-export'), str(result)], cwd=ROOT, check=True)
+            raw_collision = tmp/'collision.raw'
+            subprocess.run([str(tmp/'city-export'), str(result), str(raw_collision)], cwd=ROOT, check=True)
             with result.open('rb') as stream:
                 magic, version, count = struct.unpack('<8sII', stream.read(16))
             if (magic, version) != (b'CITYMESH', 1) or not count:
                 raise ValueError('generator produced an invalid asset')
+            mesh = result.read_bytes()
+            # FNV-1a identifies the exact mesh paired with these bounds.
+            fingerprint = 14695981039346656037
+            for byte in mesh:
+                fingerprint = ((fingerprint ^ byte) * 1099511628211) & 0xffffffffffffffff
+            raw = raw_collision.read_bytes()
+            if len(raw) < 4:
+                raise ValueError('generator produced invalid collision data')
+            box_count, = struct.unpack_from('<I', raw)
+            if not box_count or len(raw) != 4 + box_count * 24:
+                raise ValueError('generator produced invalid collision data')
+            collision = b'CITYCOL1' + struct.pack('<QIf', fingerprint, box_count, 0.0) + raw[4:]
             args.output.parent.mkdir(parents=True, exist_ok=True)
             # Replace only after the entire asset was generated successfully.
             staged = args.output.with_suffix(args.output.suffix + '.tmp')
             try:
-                staged.write_bytes(result.read_bytes())
+                staged.write_bytes(mesh)
                 os.replace(staged, args.output)
             finally:
                 if staged.exists():
                     staged.unlink()
+            collision_path = args.output.with_suffix('.collision')
+            staged_collision = collision_path.with_suffix(collision_path.suffix + '.tmp')
+            try:
+                staged_collision.write_bytes(collision)
+                os.replace(staged_collision, collision_path)
+            finally:
+                if staged_collision.exists():
+                    staged_collision.unlink()
         print(f'Wrote {args.output} ({len(buildings)} starting buildings, {count} batches)')
     except (OSError, KeyError, TypeError, ValueError, subprocess.CalledProcessError) as error:
         print(f'City generation failed: {error}', file=sys.stderr)
