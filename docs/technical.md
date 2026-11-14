@@ -71,7 +71,7 @@ Scene subsystems compose objects using these helpers. The renderer owns OpenGL r
   nodes are the 120 m intersections (lines at 120 m spacing offset 60 m),
   exits are weighted (straight 5 : turn 2 : 2), boundary nodes turn inward.
 * Pedestrians walk the block sidewalk rings (5.5 m in from each road
-  centerline), bouncing at ring ends; two walkers on each block's ring.
+  centerline), bouncing at ring ends; three walkers on every block's ring.
 * Movement runs on fixed 1/120 s steps so the seeded wander is
   deterministic; actor collisions are not simulated (they are below the
   flight corridor).

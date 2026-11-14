@@ -101,22 +101,21 @@ void CityActors::initialize()
 
 void CityActors::spawnPedestrians(int chunkX, int chunkZ)
 {
-    // Two walkers on the ring of every block except the center helipad
-    // block. Sides and directions are staggered so neighbours never march
-    // in step; colours cycle through the shirt palette.
+    // Three walkers on the ring of every block, center block included (its
+    // ring clears the helipad tower). Slots cover the full ring so traffic
+    // reads as steady flow; directions and colours alternate.
     const float offsetX = chunkX * 360.0f;
     const float offsetZ = chunkZ * 360.0f;
     int blockIndex = 0;
     for (float blockZ : {-120.0f, 0.0f, 120.0f}) {
         for (float blockX : {-120.0f, 0.0f, 120.0f}) {
-            if (blockX == 0.0f && blockZ == 0.0f) continue;
-            for (int slot = 0; slot < 2; ++slot) {
+            for (int slot = 0; slot < 3; ++slot) {
                 Pedestrian ped{};
                 ped.centerX = offsetX + blockX;
                 ped.centerZ = offsetZ + blockZ;
-                ped.s = sideLength * (slot == 0 ? 0.25f : 0.75f)
+                ped.s = sideLength * (0.125f + 0.333f * slot)
                       + 13.0f * static_cast<float>(blockIndex % 4);
-                ped.direction = slot == 0 ? 1 : -1;
+                ped.direction = slot % 2 == 0 ? 1 : -1;
                 ped.color = (blockIndex + slot) % 6;
                 pedestrians_.push_back(ped);
             }

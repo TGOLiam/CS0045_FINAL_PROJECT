@@ -11,8 +11,8 @@
 // happens once per frame through the shared unit primitives.
 class CityActors {
 public:
-    // Fixed, deterministic actor set: the reference cars plus two walkers
-    // per outer block ring.
+    // Fixed, deterministic actor set: the reference cars plus three walkers
+    // on every block ring.
     void initialize();
 
     void update(float deltaTime);
