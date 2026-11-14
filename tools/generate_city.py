@@ -95,17 +95,18 @@ def main():
             header.append('};')
             (tmp / 'city_layout_generated.h').write_text('\n'.join(header)+'\n')
             compiler = os.environ.get('CXX', 'g++')
+            exporter = tmp / ('city-export.exe' if os.name == 'nt' else 'city-export')
             command = [compiler, '-std=c++17', '-O2', '-I'+str(ROOT/'src'), '-I'+str(tmp),
                        '-I'+str(ROOT/'tools/city'),
                        f'-DCITY_CHUNK_SIZE={f(size)}', f'-DCITY_ROAD_SPACING={f(spacing)}',
                        f'-DCITY_ROAD_WIDTH={f(road)}', f'-DCITY_TOWER_HEIGHT={f(height)}',
                        str(ROOT/'tools/city/export.cpp'), str(ROOT/'tools/city/CityGenerator.cpp'),
                        str(ROOT/'src/math/Matrix4.cpp'), str(ROOT/'src/renderer/PrimitiveMeshes.cpp'),
-                       '-o', str(tmp/'city-export')]
+                       '-o', str(exporter)]
             subprocess.run(command, cwd=ROOT, check=True)
             result = tmp/'city.mesh'
             raw_collision = tmp/'collision.raw'
-            subprocess.run([str(tmp/'city-export'), str(result), str(raw_collision)], cwd=ROOT, check=True)
+            subprocess.run([str(exporter), str(result), str(raw_collision)], cwd=ROOT, check=True)
             with result.open('rb') as stream:
                 magic, version, count = struct.unpack('<8sII', stream.read(16))
             if (magic, version) != (b'CITYMESH', 1) or not count:

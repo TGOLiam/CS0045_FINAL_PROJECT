@@ -1,8 +1,14 @@
 CXX ?= g++
 CXXFLAGS ?= -std=c++17 -Wall -Wextra -Wpedantic -O2
-LDLIBS ?= -lGLEW -lglut -lGL -lGLU
+PYTHON ?= python3
 
+ifeq ($(OS),Windows_NT)
+LDLIBS ?= -lglew32 -lfreeglut -lopengl32 -lglu32
+TARGET := build/helicopter-simulator.exe
+else
+LDLIBS ?= -lGLEW -lglut -lGL -lGLU
 TARGET := build/helicopter-simulator
+endif
 # Discover subsystem sources and keep their directory layout under build/.
 SOURCES := $(sort $(shell find src -type f -name '*.cpp'))
 OBJECTS := $(patsubst src/%.cpp,build/%.o,$(SOURCES))
@@ -23,7 +29,7 @@ build/%.o: src/%.cpp Makefile
 -include $(DEPENDENCIES)
 
 city-asset:
-	python3 tools/generate_city.py
+	$(PYTHON) tools/generate_city.py
 
 clean:
 	rm -rf build

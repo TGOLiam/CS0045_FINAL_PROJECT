@@ -5,14 +5,35 @@ subsystem ownership, and collaboration rules.
 
 ## Build
 
-On Linux, install a C++17 compiler, GNU Make, and development packages for
-FreeGLUT, GLEW, OpenGL, and GLU. For example, on Debian or Ubuntu:
+The Makefile builds optimized C++17 code by default. Run the commands from the
+project root so the program can load the city assets.
+
+### Linux
+
+Install a C++17 compiler, GNU Make, and development packages for FreeGLUT,
+GLEW, OpenGL, and GLU. For example, on Debian or Ubuntu:
 
 ```sh
 sudo apt install g++ make freeglut3-dev libglew-dev libgl1-mesa-dev libglu1-mesa-dev
 make
 ./build/helicopter-simulator
 ```
+
+### Windows (MSYS2 UCRT64)
+
+Install [MSYS2](https://www.msys2.org/), open its **UCRT64** terminal, and
+install the compiler, dependencies, GNU Make, and Python:
+
+```sh
+pacman -S --needed make mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-freeglut mingw-w64-ucrt-x86_64-glew mingw-w64-ucrt-x86_64-python
+make
+./build/helicopter-simulator.exe
+```
+
+Use the UCRT64 terminal to run the program so the MSYS2 runtime DLLs are on
+`PATH`. The Makefile relies on the Unix shell utilities provided by MSYS2; it
+is not a native Command Prompt or Visual Studio build. Do not mix packages from
+different MSYS2 environments.
 
 The current application opens a full-screen window; press Escape to exit. Run
 `make clean` to remove generated build files.
@@ -36,8 +57,10 @@ dimensions, styles and palette choices, or the central tower's height. Then run:
 ```sh
 make city-asset
 make
-./build/helicopter-simulator
 ```
+
+Run the platform-specific executable shown above. Set `PYTHON` when necessary
+to choose a Python 3 interpreter, for example `make city-asset PYTHON=python`.
 
 The generator validates building overlap, road/sidewalk clearance and the
 reserved park and helipad areas before replacing the mesh and collision data. It requires Python 3,
