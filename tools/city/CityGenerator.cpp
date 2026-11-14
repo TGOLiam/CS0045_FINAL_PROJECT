@@ -14,6 +14,12 @@ constexpr float cityHalfSize = 1.5f * chunkSize;
 constexpr float roadSpacing = CITY_ROAD_SPACING;
 constexpr float roadWidth = CITY_ROAD_WIDTH;
 
+bool chunkHasPark(int x, int z)
+{
+    // Keep the starting park and the same deterministic generated variants.
+    return (x == 0 && z == 0) || ((x * 17 + z * 31) % 3 + 3) % 3 == 0;
+}
+
 enum class BuildingStyle { Tower, Residential, Commercial };
 
 struct Building {
@@ -165,7 +171,7 @@ std::vector<Building> makeBuildings()
             // Match the reference's deterministic chunk variants, including
             // its normalized modulo for negative coordinates.
             const int variant = ((chunkX * 17 + chunkZ * 31) % 3 + 3) % 3;
-            const bool hasPark = variant == 0;
+            const bool hasPark = chunkHasPark(chunkX, chunkZ);
             const float offsetX = chunkX * chunkSize;
             const float offsetZ = chunkZ * chunkSize;
             auto append = [&](Building b, int index) {
@@ -281,12 +287,17 @@ void drawBuildingRoof(Renderer& renderer, const Building& b)
     }
 }
 
-void drawDisc(Renderer& renderer, float y, float diameter, Color color)
+void drawDiscAt(Renderer& renderer, float x, float y, float z, float diameter, Color color)
 {
-    const Matrix4 model = Matrix4::translation(0.0f, y, 0.0f)
+    const Matrix4 model = Matrix4::translation(x, y, z)
                         * Matrix4::rotation(-90.0f, {1.0f, 0.0f, 0.0f})
                         * Matrix4::scale(diameter, diameter, 1.0f);
     renderer.draw(MeshId::Disc, model, color);
+}
+
+void drawDisc(Renderer& renderer, float y, float diameter, Color color)
+{
+    drawDiscAt(renderer, 0.0f, y, 0.0f, diameter, color);
 }
 }
 
@@ -346,6 +357,39 @@ void City::render(Renderer& renderer) const
         for (int x = -1; x <= 1; ++x) {
             drawSurface(renderer, x * chunkSize, z * chunkSize,
                         chunkSize, chunkSize, 0.0f, ground);
+        }
+    }
+
+    // Park block from the reference: lawn, cross paths, a ring path, plaza,
+    // and a pond. Small height offsets prevent coplanar depth flicker.
+    constexpr float pi = 3.14159265358979323846f;
+    const Color lawn = {127.0f/255.0f, 174.0f/255.0f, 107.0f/255.0f};
+    const Color path = {234.0f/255.0f, 223.0f/255.0f, 191.0f/255.0f};
+    const Color water = {127.0f/255.0f, 183.0f/255.0f, 217.0f/255.0f};
+    for (int chunkZ = -1; chunkZ <= 1; ++chunkZ) {
+        for (int chunkX = -1; chunkX <= 1; ++chunkX) {
+            if (!chunkHasPark(chunkX, chunkZ)) continue;
+            const float x = chunkX * chunkSize + 120.0f;
+            const float z = chunkZ * chunkSize + 120.0f;
+            drawSurface(renderer, x, z, 106.0f, 106.0f, 0.01f, lawn);
+            drawSurface(renderer, x, z, 4.0f, 106.0f, 0.02f, path);
+            drawSurface(renderer, x, z, 106.0f, 4.0f, 0.02f, path);
+            // Twenty-four short quads approximate the circular 3-unit path.
+            constexpr int segments = 24;
+            constexpr float radius = 28.0f;
+            const float segmentLength = 2.0f * radius * std::tan(pi / segments);
+            for (int i = 0; i < segments; ++i) {
+                const float angle = 2.0f * pi * i / segments;
+                const Matrix4 ringSegment =
+                    Matrix4::translation(x + radius * std::cos(angle), 0.03f,
+                                         z + radius * std::sin(angle))
+                    * Matrix4::rotation(-angle * 180.0f / pi, {0.0f, 1.0f, 0.0f})
+                    * Matrix4::rotation(-90.0f, {1.0f, 0.0f, 0.0f})
+                    * Matrix4::scale(3.0f, segmentLength, 1.0f);
+                renderer.draw(MeshId::Quad, ringSegment, path);
+            }
+            drawDiscAt(renderer, x, 0.04f, z, 20.0f, path);
+            drawDiscAt(renderer, x, 0.05f, z, 10.0f, water);
         }
     }
 

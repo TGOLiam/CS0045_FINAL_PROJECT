@@ -19,7 +19,7 @@ The current application opens a full-screen window; press Escape to exit. Run
 
 The city is loaded from `assets/city/city.mesh` and `city.collision`, so run the program from the
 project root. The asset contains the current fixed 3 × 3 city geometry and solid
-colors, including its roads, buildings and helipad. Its binary format is:
+colors, including its roads, buildings, parks and helipad. Its binary format is:
 `CITYMESH` (8 bytes), version and batch count (little-endian uint32), followed
 by batches of primitive and vertex count (uint32), RGBA (four IEEE-754 float32)
 and XYZ positions (three float32 per vertex). Version 1 requires a little-endian
