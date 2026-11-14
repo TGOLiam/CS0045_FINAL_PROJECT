@@ -21,6 +21,7 @@ private:
     int width_ = 1;
     int height_ = 1;
     bool quitRequested_ = false;
+    bool escapeWasDown_ = false;
     double physicsAccumulator_ = 0.0;
     AppState appState_ = AppState::MainMenu;
     Input input_;

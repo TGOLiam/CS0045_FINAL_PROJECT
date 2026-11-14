@@ -2,6 +2,7 @@
 
 #include "../renderer/Renderer.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -11,6 +12,10 @@
 #include <vector>
 
 namespace {
+constexpr float mapHalfExtent = 540.0f; // Three 360 m chunks, centred at origin.
+constexpr float boundaryThickness = 4.0f;
+constexpr float maximumFlightHeight = 300.0f;
+
 template <typename T>
 bool readValue(std::ifstream& file, T& value)
 {
@@ -23,6 +28,22 @@ bool validColor(Color color)
            std::isfinite(color.g) && color.g >= 0.0f && color.g <= 1.0f &&
            std::isfinite(color.b) && color.b >= 0.0f && color.b <= 1.0f &&
            std::isfinite(color.a) && color.a >= 0.0f && color.a <= 1.0f;
+}
+
+void addFlightBoundary(std::vector<Aabb>& boxes, float groundHeight)
+{
+    const float outer = mapHalfExtent + boundaryThickness;
+    const float lower = groundHeight - boundaryThickness;
+    const float upper = maximumFlightHeight + boundaryThickness;
+
+    // Four invisible walls and a ceiling enclose the finite city. They use the
+    // existing collision path, so flight cannot leave the map or exceed 300 m.
+    boxes.push_back({{-outer, lower, -outer}, {-mapHalfExtent, upper, outer}});
+    boxes.push_back({{ mapHalfExtent, lower, -outer}, { outer, upper, outer}});
+    boxes.push_back({{-mapHalfExtent, lower, -outer}, { mapHalfExtent, upper, -mapHalfExtent}});
+    boxes.push_back({{-mapHalfExtent, lower,  mapHalfExtent}, { mapHalfExtent, upper,  outer}});
+    boxes.push_back({{-mapHalfExtent, maximumFlightHeight, -mapHalfExtent},
+                     { mapHalfExtent, upper, mapHalfExtent}});
 }
 }
 
@@ -136,11 +157,26 @@ bool City::initialize(Renderer& renderer, const ActorConfig& actorConfig)
         std::cerr << "Unexpected data after city asset.\n";
         return false;
     }
+    buildingCollisionCount_ = boxes.size();
+    addFlightBoundary(boxes, ground);
     batches_ = std::move(loaded);
     collisionBounds_ = std::move(boxes);
     groundHeight_ = ground;
     actors_.initialize(actorConfig);
     return true;
+}
+
+float City::spawnSurfaceHeightAt(Vec3 position) const
+{
+    float surface = groundHeight_;
+    for (std::size_t i = 0; i < buildingCollisionCount_; ++i) {
+        const Aabb& box = collisionBounds_[i];
+        if (position.x >= box.min.x && position.x <= box.max.x &&
+            position.z >= box.min.z && position.z <= box.max.z) {
+            surface = std::max(surface, box.max.y);
+        }
+    }
+    return surface;
 }
 
 void City::update(float deltaTime)

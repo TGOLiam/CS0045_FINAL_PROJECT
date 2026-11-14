@@ -63,14 +63,7 @@ int Application::run(int argc, char **argv) {
   // Calculate helicopter spawn height.
   const Vec3 start = helicopter_.position();
 
-  float spawnSurface = city_.groundHeight();
-
-  for (const Aabb &box : city_.collisionBounds()) {
-    if (start.x >= box.min.x && start.x <= box.max.x && start.z >= box.min.z &&
-        start.z <= box.max.z) {
-      spawnSurface = std::max(spawnSurface, box.max.y);
-    }
-  }
+  const float spawnSurface = city_.spawnSurfaceHeightAt(start);
 
   helicopter_.placeAbove(spawnSurface, customization_.scale());
 
@@ -158,9 +151,19 @@ int Application::run(int argc, char **argv) {
 // --------------------------------------------------
 
 void Application::update(float deltaTime) {
+  const bool escapePressed = input_.isKeyPressed(27);
+  const bool escapeJustPressed = escapePressed && !escapeWasDown_;
+  escapeWasDown_ = escapePressed;
+
   // MENU STATES
   if (appState_ != AppState::Playing) {
     HUD::reset();
+
+    // Outside flight, Escape closes the application.
+    if (escapeJustPressed) {
+      quitRequested_ = true;
+      return;
+    }
 
     // Process menu navigation and customization.
     Menus::handleInput(input_, appState_, width_, height_, quitRequested_,
@@ -245,10 +248,12 @@ void Application::update(float deltaTime) {
   // Update camera target.
   camera_.setTarget(helicopter_.position());
 
-  // ESC exits gameplay.
-  if (input_.isKeyPressed(27)) {
+  // Escape leaves flight for the menu. Edge detection prevents the same held
+  // key press from immediately closing the application on the next frame.
+  if (escapeJustPressed) {
     audio_.stopHelicopterSound();
-    quitRequested_ = true;
+    appState_ = AppState::MainMenu;
+    physicsAccumulator_ = 0.0;
     return;
   }
 
