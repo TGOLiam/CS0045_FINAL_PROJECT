@@ -136,7 +136,7 @@ void CityActors::spawnPedestrians(int chunkX, int chunkZ)
                 Pedestrian ped{};
                 ped.centerX = offsetX + blockX;
                 ped.centerZ = offsetZ + blockZ;
-                ped.s = sideLength * (slot + 0.5f) / walkersPerBlock_
+                ped.s = ringPerimeter * (slot + 0.5f) / walkersPerBlock_
                       + 13.0f * static_cast<float>(blockIndex % 4);
                 ped.direction = slot % 2 == 0 ? 1 : -1;
                 ped.color = (blockIndex + slot) % 6;
