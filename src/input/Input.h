@@ -12,7 +12,12 @@ private:
     bool leftControl;
     bool rightControl;
 
+    bool leftMouseDown;
+    bool leftMouseClicked;
     bool rightMouseDown;
+
+    int mouseX;
+    int mouseY;
 
     int lastMouseX;
     int lastMouseY;
@@ -38,6 +43,11 @@ public:
     bool isKeyPressed(unsigned char key) const;
     bool isRightMouseDown() const;
     bool isControlPressed() const;
+
+    bool isLeftMouseClicked() const;
+    void consumeLeftMouseClick();
+    void getMousePosition(int& x, int& y) const;
+
     void consumeMouseDelta(int& x, int& y);
     int consumeWheelDelta();
 };

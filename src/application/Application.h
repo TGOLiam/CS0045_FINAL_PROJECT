@@ -7,6 +7,7 @@
 #include "../helicopter/Helicopter.h"
 #include "../city/City.h"
 #include "../customization/CustomizationSettings.h"
+#include "../audio/Audio.h"
 
 class Application {
 public:
@@ -21,10 +22,12 @@ private:
     int height_ = 1;
     bool quitRequested_ = false;
     double physicsAccumulator_ = 0.0;
+    AppState appState_ = AppState::MainMenu;
     Input input_;
     Renderer renderer_;
     Camera camera_;
     Helicopter helicopter_;
     CustomizationSettings customization_;
     City city_;
+    Audio audio_;
 };
