@@ -6,27 +6,43 @@
 #include "../helicopter/Helicopter.h"
 #include "../customization/CustomizationSettings.h"
 #include "../audio/Audio.h"
+#include "../city/City.h"
+
+#include <array>
 
 class Menus
 {
 public:
-    static void render(
+    bool initialize(Renderer& renderer);
+
+    void render(
         Renderer& renderer,
-        Helicopter& helicopter,
+        const City& city,
         AppState state,
         int width,
         int height,
         const CustomizationSettings& customization,
-        Audio& audio
-    );
+        const Audio& audio
+    ) const;
 
-    static void handleInput(
+    void update(
         Input& input,
         AppState& state,
         int width,
         int height,
         bool& quitRequested,
         CustomizationSettings& customization,
-        Audio& audio
+        Audio& audio,
+        float deltaTime
     );
+
+private:
+    // This display model and its camera never change the flight helicopter.
+    Helicopter displayHelicopter_;
+    std::array<std::size_t, 45> glyphMeshes_{};
+    std::array<float, 5> hover_{};
+    float elapsed_ = 0.0f;
+    float mouseX_ = -1.0f;
+    float mouseY_ = -1.0f;
+    int activeSlider_ = -1;
 };

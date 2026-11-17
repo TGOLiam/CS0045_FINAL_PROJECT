@@ -32,6 +32,8 @@ void Input::initialize()
 
     glutMouseFunc(mouseButton);
     glutMotionFunc(mouseMotion);
+    // Menu hover feedback also needs motion events with no button held.
+    glutPassiveMotionFunc(mouseMotion);
     glutMouseWheelFunc(mouseWheel);
 }
 

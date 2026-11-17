@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AppState.h"
+#include "Menus.h"
 #include "../renderer/Renderer.h"
 #include "../camera/Camera.h"
 #include "../input/Input.h"
@@ -26,6 +27,7 @@ private:
     AppState appState_ = AppState::MainMenu;
     Input input_;
     Renderer renderer_;
+    Menus menus_;
     Camera camera_;
     Helicopter helicopter_;
     CustomizationSettings customization_;

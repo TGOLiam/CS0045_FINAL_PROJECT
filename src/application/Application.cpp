@@ -36,9 +36,10 @@ int Application::run(int argc, char **argv) {
   }
 
   // Initialize renderer.
-  if (!renderer_.initialize()) {
-    std::cerr << "Could not initialize renderer.\n";
+  if (!renderer_.initialize() || !menus_.initialize(renderer_)) {
+    std::cerr << "Could not initialize renderer or menu geometry.\n";
 
+    renderer_.shutdown();
     glutDestroyWindow(windowId_);
     windowId_ = 0;
     return 1;
@@ -166,8 +167,8 @@ void Application::update(float deltaTime) {
     }
 
     // Process menu navigation and customization.
-    Menus::handleInput(input_, appState_, width_, height_, quitRequested_,
-                       customization_, audio_);
+    menus_.update(input_, appState_, width_, height_, quitRequested_,
+                  customization_, audio_, deltaTime);
 
     // Manage audio depending on the current state.
     if (appState_ == AppState::Playing) {
@@ -305,7 +306,7 @@ void Application::render() {
     HUD::render(renderer_, helicopter_, width_, height_, city_.groundHeight());
   } else {
     // Menu rendering.
-    Menus::render(renderer_, helicopter_, appState_, width_, height_,
-                  customization_, audio_);
+    menus_.render(renderer_, city_, appState_, width_, height_, customization_,
+                  audio_);
   }
 }

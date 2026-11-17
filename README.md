@@ -30,13 +30,36 @@ make
 ./build/helicopter-simulator.exe
 ```
 
-Use the UCRT64 terminal to run the program so the MSYS2 runtime DLLs are on
-`PATH`. The Makefile relies on the Unix shell utilities provided by MSYS2; it
-is not a native Command Prompt or Visual Studio build. Do not mix packages from
-different MSYS2 environments.
+Keep the UCRT64 runtime DLLs on `PATH` when running the program. With
+`C:\msys64\ucrt64\bin` on `PATH` and `mingw32-make` installed, the Windows
+branch of the same Makefile also builds from PowerShell:
 
-The current application opens a full-screen window; press Escape to exit. Run
-`make clean` to remove generated build files.
+```powershell
+mingw32-make -j4
+.\build\helicopter-simulator.exe
+```
+
+Do not mix packages from different MSYS2 environments.
+
+The application opens a full-screen window. Escape returns from flight to the
+main menu, or closes the application when already in a menu. Run `make clean`
+to remove generated build files.
+
+## Menus
+
+The menus use a sunset rooftop view of the existing city and helicopter, with
+solid coral, cream, yellow and teal graphics. A separate display helicopter
+and gently moving presentation camera keep the menu independent of flight.
+The block alphabet is built from static triangles uploaded once through Renderer;
+no textures, shaders, font files or additional dependencies are required.
+
+Choose **Game Start**, select paint and size in the live customization view,
+then choose **Play**. Size buttons and the scroll wheel change the preview size.
+**Sound Settings** provides draggable master, menu-effect and helicopter volume
+sliders, plus mute. **Back to Menu** preserves the chosen settings.
+
+Menu controls and text scale together with the window resolution. The flight
+scene, HUD, physics and player camera use their existing code.
 
 ## Flight HUD
 
