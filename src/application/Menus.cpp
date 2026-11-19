@@ -248,7 +248,7 @@ void drawCustomization(const Painter& p, const Layout& l,
 
     p.text(64, 513, "02 / AIRCRAFT SIZE", 2.1f, ink);
     constexpr const char* sizeNames[] = {"SMALL", "MEDIUM", "LARGE"};
-    constexpr const char* scaleNames[] = {"1.0X", "1.25X", "1.5X"};
+    constexpr const char* accelerationNames[] = {"FAST", "NORMAL", "SLOW"};
     for (int i = 0; i < 3; ++i) {
         const Rect r = sizeOption(i);
         const bool selected = static_cast<int>(settings.size) == i;
@@ -256,7 +256,7 @@ void drawCustomization(const Painter& p, const Layout& l,
                                                                    : Color{0.92f, 0.87f, 0.73f});
         p.centered({r.x, r.y + 12, r.width, 17}, sizeNames[i], 1.9f,
                    selected ? paper : ink);
-        p.centered({r.x, r.y + 40, r.width, 14}, scaleNames[i], 1.5f,
+        p.centered({r.x, r.y + 40, r.width, 14}, accelerationNames[i], 1.5f,
                    selected ? yellow : muted);
     }
     p.text(64, 651, "SCROLL TO CHANGE SIZE", 1.7f, muted);
